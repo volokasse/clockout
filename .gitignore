@@ -1,0 +1,143 @@
+# Monorepo : front/ (Angular), back/ (NestJS), infra/
+# Les motifs sans slash initial s'appliquent à tous les niveaux.
+
+# Dépendances et caches des gestionnaires de paquets
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/install-state.gz
+.yarn/build-state.yml
+.pnp.*
+# Conserver les lockfiles et les versions/configurations Yarn dans Git.
+# Pour Yarn Zero-Installs, adapter les exclusions cache et .pnp.* ci-dessus.
+
+# Compilation Angular / NestJS / TypeScript
+/front/dist/
+/front/out-tsc/
+/front/.angular/
+/back/dist/
+*.tsbuildinfo
+
+# Caches de développement et de monorepo
+.cache/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.nx/cache/
+.nx/workspace-data/
+.turbo/
+
+# Tests : couverture et rapports générés
+coverage/
+.nyc_output/
+playwright-report/
+playwright/.cache/
+test-results/
+/front/cypress/screenshots/
+/front/cypress/videos/
+/back/cypress/screenshots/
+/back/cypress/videos/
+
+# Journaux et diagnostics Node.js
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+*.pid
+*.pid.lock
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+
+# Fichiers temporaires
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Variables d'environnement locales / confidentielles
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+!.env.*.example
+!.env.*.sample
+!.env.*.template
+# Les exemples versionnés ne doivent contenir aucune vraie valeur secrète.
+# Conserver front/src/environments/ : son contenu est public dans le bundle.
+
+# IDE : préférences personnelles, avec configurations VS Code partageables
+.idea/
+*.iml
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+
+# Fichiers système
+.DS_Store
+._*
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Infrastructure : conventions pour les données et fichiers locaux
+# Placer les volumes bind-mount et exports dans ces dossiers.
+/infra/data/
+/infra/volumes/
+/infra/backups/
+/infra/tmp/
+/infra/.cache/
+/infra/.local/
+
+# Docker : identifiants locaux et surcharges personnelles explicites
+.docker/
+compose.local.yml
+compose.local.yaml
+docker-compose.local.yml
+docker-compose.local.yaml
+# Charger les fichiers *.local avec docker compose -f ... -f ...
+# Les fichiers compose.override.yml/yaml restent versionnables par défaut.
+
+# Kubernetes : accès au cluster et secrets locaux en clair
+.kube/
+/infra/**/kubeconfig
+/infra/**/kubeconfig.*
+/infra/**/*.kubeconfig
+/infra/**/secrets.local/
+/infra/**/secret.local.yaml
+/infra/**/secret.local.yml
+/infra/**/secrets.local.yaml
+/infra/**/secrets.local.yml
+/infra/**/values.local.yaml
+/infra/**/values.local.yml
+# Conserver les manifests, charts, valeurs non sensibles, secrets chiffrés
+# (SOPS / Sealed Secrets) et modèles de secrets sans identifiants réels.
+# Un Secret Kubernetes encodé en base64 n'est pas chiffré.
+
+# Certificats privés et clés locales : dossiers réservés à cet usage
+/infra/**/certs.local/
+/infra/**/keys.local/
+# Les certificats publics et fixtures ne sont pas exclus globalement.
+
+# À conserver dans Git :
+# - package-lock.json / pnpm-lock.yaml / yarn.lock (selon le gestionnaire)
+# - angular.json, nest-cli.json, tsconfig*.json et configurations de lint/tests
+# - Dockerfile*, .dockerignore, compose*.yml/yaml et manifests Kubernetes
+# - migrations, schémas, scripts et fichiers .env.example sans secrets
+# Un .gitignore ne remplace pas les .dockerignore des contextes de build.
