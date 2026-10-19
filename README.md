@@ -1,4 +1,4 @@
-# Clock out App
+# ClockOut
 
 Cette application a pour but de me permettre d'avoir une vue d'ensemble sur mes heures de travail.
 
@@ -25,10 +25,48 @@ Cette page va servir à afficher des statistiques pertinentes pour l'utilisateur
     - la répartition général de son temps de travail sur le mois en cours (par sous-périodes)
 
 
-## Front (Angular)
+# Utilisation
 
+## Prérequis
 
+- Node.js compatible avec le front, npm, git.
+- Angular et NestJS cli à jour.
+- Un gestionnaire de conteneurs fonctionnel (Docker Desktop).
 
+## Installation
 
+1. Dans front : ```npm ci```
+2. Dans back : ```npm ci```
+3. Copier ```infra/.env.example``` vers ```infra/.env```
+4. Adapter les identifiants et le port local si nécessaire
 
-## Back (NestJS)
+## Démarrage (trois terminaux)
+
+1. Dans infra : ```docker compose up -d```
+2. Dans front : ```npm start```
+3. Dans back : ```npm run start:dev```
+
+## Accès
+
+- Front : [http://localhost:4200](http://localhost:4200)
+- Back (API) : [http://localhost:3000/api/health](http://localhost:3000/api/health)
+- PostgreSQL : 127.0.0.1:5432, DB : clockout
+- Identifiants locaux : voir ```infra/.env```
+
+## Arrêt
+
+- Ctrl+C pour le front et le back
+- Dans infra : ```docker compose down``` pour la DB
+    - Ne pas utiliser l'argument -v dans la commande sous risque de perte des données.
+
+## Tests et vérifications
+
+- npm run build dans front puis back.
+- npm run test dans front puis back.
+- Bouton vérifier l'API : succès, panne, reprise.
+- Persistance des données du PostgreSQL vérifiée après down/up.
+
+## Limites du jour 1
+
+- Pas encore de connexion NestJS/PostegreSQL.
+- Pas encore de pointage, authentification ou bilan.
