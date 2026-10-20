@@ -38,7 +38,8 @@ Cette page va servir à afficher des statistiques pertinentes pour l'utilisateur
 1. Dans front : ```npm ci```
 2. Dans back : ```npm ci```
 3. Copier ```infra/.env.example``` vers ```infra/.env```
-4. Adapter les identifiants et le port local si nécessaire
+4. Copier ```back/.env.example``` vers ```back/.env```
+5. Adapter les identifiants et informations si nécessaire
 
 ## Démarrage (trois terminaux)
 
@@ -65,6 +66,16 @@ Cette page va servir à afficher des statistiques pertinentes pour l'utilisateur
 - npm run test dans front puis back.
 - Bouton vérifier l'API : succès, panne, reprise.
 - Persistance des données du PostgreSQL vérifiée après down/up.
+
+## Back
+
+### Database migrations
+- ```npm run migration:generate -- src/database/migrations/MigrationName``` to generate a migration file from changes applied to entities in project
+- ```npm run migration:create -- src/database/migrations/MigrationName``` to create a migration file that you can populate freely
+- ```npm run migration:show``` to list all migrations and their status
+- ```npm run migration:run``` to run waiting migrations
+- ```npm run migration:revert``` to revert last migration
+
 
 ## Limites du jour 1
 
