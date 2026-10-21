@@ -1,9 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, ManyToOne, Index } from "typeorm";
 import { SubPeriod } from "./sub-period.entity.js";
 import { PeriodType } from "./period-type.entity.js";
 import type { Relation } from "typeorm";
 
 @Entity()
+@Index('UQ_period_single_open', { synchronize: false })
 export class Period {
     @PrimaryGeneratedColumn()
     id: number;

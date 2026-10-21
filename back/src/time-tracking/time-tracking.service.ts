@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { EntityManager, IsNull, QueryFailedError, Repository } from 'typeorm';
 import { Period } from './entities/period.entity.js';
 import type { PeriodResponse } from './period-response.js';
 import { SessionState, Span } from './session-state.js';
@@ -8,7 +8,7 @@ import { SessionResponse, SpanResponse } from './session-response.js';
 import { Clock } from './clock.js';
 import { SubPeriod } from './entities/sub-period.entity.js';
 import { PERIOD_TYPE } from './period-types.js';
-import { assertTransition } from './session-transitions.js';
+import { assertTransition, InvalidTransitionError } from './session-transitions.js';
 
 const toSpan = (row: { id: number; start: Date; end: Date | null }): Span => ({
     id: row.id,
@@ -21,6 +21,10 @@ const toSpanResponse = (span: Span): SpanResponse => ({
     start: span.start.toISOString(),
     end: span.end?.toISOString() ?? null
 });
+
+const isUniqueViolation = (error: unknown): boolean =>
+    error instanceof QueryFailedError
+    && (error.driverError as { code?: string } | undefined)?.code === '23505';
 
 function toResponse(state: SessionState): SessionResponse {
     if (state.status === 'none') {
@@ -66,81 +70,105 @@ export class TimeTrackingService {
     }
 
     async current(): Promise<SessionResponse> {
-        return toResponse(await this.loadState());
+        return toResponse(await this.loadState(this.periods.manager, false));
     }
 
     async start(): Promise<SessionResponse> {
-        const state = await this.loadState();
-        assertTransition(state, 'start');
+        try
+        {
+            return await this.inTransaction(async (manager, now) => {
+                const state = await this.loadState(manager, true);
+                assertTransition(state, 'start');
 
-        const period = await this.manager.save(Period, {
-            start: this.clock.now(),
-            end: null,
-            periodType: { id: PERIOD_TYPE.WORK }
-        });
-        return toResponse({ status: 'period', session: toSpan(period), subs: [] });
+                const period = await manager.save(Period, {
+                    start: now,
+                    end: null,
+                    periodType: { id: PERIOD_TYPE.WORK }
+                });
+
+                return toResponse({ status: 'period', session: toSpan(period), subs: [] });
+            });
+        }
+        catch(error)
+        {
+            if (isUniqueViolation(error)) {
+                throw new InvalidTransitionError('start', 'period');
+            }
+            throw error;
+        }
     }
 
     async sub(subType: typeof PERIOD_TYPE[keyof typeof PERIOD_TYPE]): Promise<SessionResponse> {
-        const state = await this.loadState();
-        assertTransition(state, 'sub');
+        return this.inTransaction(async (manager, now) => {
+            const state = await this.loadState(manager, true);
+            assertTransition(state, 'sub');
 
-        const sub = await this.manager.save(SubPeriod, {
-            start: this.clock.now(),
-            end: null,
-            periodType: { id: subType }
-        });
-        return toResponse({
-            status: 'subed',
-            session: state.session,
-            subs: state.subs,
-            sub: sub
+            const sub = await manager.save(SubPeriod, {
+                start: now,
+                end: null,
+                periodType: { id: subType },
+                period: { id: state.session.id }
+            });
+
+            return toResponse({
+                status: 'subed',
+                session: state.session,
+                subs: state.subs,
+                sub: sub
+            });
         });
     }
 
     async endSub(): Promise<SessionResponse> {
-        const state = await this.loadState();
-        assertTransition(state, 'endsub');
+        return this.inTransaction(async (manager, now) => {
+            const state = await this.loadState(manager, true);
+            assertTransition(state, 'endsub');
 
-        const now = this.clock.now();
-        await this.manager.update(SubPeriod, state.sub.id, { end: now });
-        return toResponse({
-            status: 'period',
-            session: state.session,
-            subs: [ ...state.subs, { ...state.sub, end: now }]
+            await manager.update(SubPeriod, state.sub.id, { end: now });
+            return toResponse({
+                status: 'period',
+                session: state.session,
+                subs: [ ...state.subs, { ...state.sub, end: now }]
+            });
         });
     }
 
     async end(): Promise<SessionResponse> {
-        const state = await this.loadState();
-        assertTransition(state, 'end');
+        return this.inTransaction(async (manager, now) => {
+            const state = await this.loadState(manager, true);
+            assertTransition(state, 'end');
 
-        const now = this.clock.now();
-        if (state.status === 'subed') {
-            await this.manager.update(SubPeriod, state.sub.id, { end: now });
-        }
-        await this.manager.update(Period, state.session.id, { end: now });
+            if (state.status === 'subed') {
+                await this.manager.update(SubPeriod, state.sub.id, { end: now });
+            }
+            await this.manager.update(Period, state.session.id, { end: now });
 
-        return {
-            status: 'none',
-            session: toSpanResponse({ ...state.session, end: now }),
-            sub: null,
-            workedMs: 0
-        };
+            return {
+                status: 'none',
+                session: toSpanResponse({ ...state.session, end: now }),
+                sub: null,
+                workedMs: 0
+            };
+        });
     }
 
     private get manager() {
         return this.periods.manager;
     }
 
-    private async loadState(): Promise<SessionState> {
-        const period = await this.manager.findOne(Period, {
-            where: { end: IsNull() }
-        });
-        if (!period)
-            return { status: 'none' };
+    private inTransaction<T>(work: (manager: EntityManager, now: Date) => Promise<T>): Promise<T> {
+        const now = this.clock.now();
+        return this.periods.manager.transaction((manager) => work(manager, now));
+    }
 
-        const rows = await this.manager.find(SubPeriod, {
+    private async loadState(manager: EntityManager, forUpdate: boolean): Promise<SessionState> {
+        const period = await manager.findOne(Period, {
+            where: { end: IsNull() },
+            ...(forUpdate && { lock: { mode: 'pessimistic_write' as const }})
+        });
+        if (!period) return { status: 'none' };
+
+        const rows = await manager.find(SubPeriod, {
             where: {
                 period: { id: period.id },
                 periodType: { id: PERIOD_TYPE.BREAK }
