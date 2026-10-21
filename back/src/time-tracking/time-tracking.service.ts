@@ -38,7 +38,7 @@ function toResponse(state: SessionState, now: Date): SessionResponse {
         status: state.status,
         session: toSpanResponse(state.session),
         sub: state.status === 'subed' ? toSpanResponse(state.sub) : null,
-        workedMs: computeWorkedMs(state.session, allSubs, now);
+        workedMs: computeWorkedMs(state.session, allSubs, now)
     }
 }
 
@@ -144,10 +144,10 @@ export class TimeTrackingService {
 
             let subs = state.subs;
             if (state.status === 'subed') {
-                await this.manager.update(SubPeriod, state.sub.id, { end: now });
+                await manager.update(SubPeriod, state.sub.id, { end: now });
                 subs = [...subs, { ...state.sub, end: now }];
             }
-            await this.manager.update(Period, state.session.id, { end: now });
+            await manager.update(Period, state.session.id, { end: now });
 
             return {
                 status: 'none',

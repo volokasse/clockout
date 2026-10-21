@@ -21,5 +21,5 @@ export function formatDuration(ms: number): string {
     const totalMinutes = Math.floor(ms / 60_000);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = String(totalMinutes % 60).padStart(2, '0');
-    return `${hours} h ${minutes}`;
+    return `${hours}h${minutes}`;
 }
