@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import type { DataSourceOptions } from 'typeorm';
 import { Period } from '../time-tracking/entities/period.entity.js';
 import { SubPeriod } from '../time-tracking/entities/sub-period.entity.js';

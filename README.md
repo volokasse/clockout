@@ -75,9 +75,3 @@ Cette page va servir à afficher des statistiques pertinentes pour l'utilisateur
 - ```npm run migration:show``` to list all migrations and their status
 - ```npm run migration:run``` to run waiting migrations
 - ```npm run migration:revert``` to revert last migration
-
-
-## Limites du jour 1
-
-- Pas encore de connexion NestJS/PostegreSQL.
-- Pas encore de pointage, authentification ou bilan.
