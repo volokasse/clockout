@@ -1,7 +1,14 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, UseFilters } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Post, UseFilters } from "@nestjs/common";
 import { TimeTrackingService } from "./time-tracking.service.js";
-import { PERIOD_TYPE } from "./period-types.js";
+import { SUB_PERIOD_TYPES, SubPeriodTypeId } from "./period-types.js";
 import { InvalidTransitionFilter } from "./invalid-transition.filter.js";
+
+const parseSubType = (value: unknown): SubPeriodTypeId => {
+    if (!SUB_PERIOD_TYPES.includes(value as SubPeriodTypeId)) {
+        throw new BadRequestException(`periodTypeId must be one of: ${SUB_PERIOD_TYPES.join(', ')}`);
+    }
+    return value as SubPeriodTypeId;
+}
 
 @Controller('time-tracking')
 @UseFilters(InvalidTransitionFilter)
@@ -27,8 +34,8 @@ export class TimeTrackingController {
 
     @Post('sub')
     @HttpCode(HttpStatus.OK)
-    sub(subType: typeof PERIOD_TYPE[keyof typeof PERIOD_TYPE]) {
-        return this.timeTracking.sub(subType);
+    sub(@Body('periodTypeId') periodTypeId: unknown) {
+        return this.timeTracking.sub(parseSubType(periodTypeId));
     }
 
     @Post('endsub')

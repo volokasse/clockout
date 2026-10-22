@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, IsNull, QueryFailedError, Repository } from 'typeorm';
 import { Period } from './entities/period.entity.js';
 import type { PeriodResponse } from './period-response.js';
-import { SessionState, Span } from './session-state.js';
-import { SessionResponse, SpanResponse } from './session-response.js';
+import { SessionState, Span, SubSpan } from './session-state.js';
+import { SessionResponse, SpanResponse, SubSpanResponse } from './session-response.js';
 import { Clock } from './clock.js';
 import { SubPeriod } from './entities/sub-period.entity.js';
 import { PERIOD_TYPE } from './period-types.js';
@@ -23,13 +23,23 @@ const toSpanResponse = (span: Span): SpanResponse => ({
     end: span.end?.toISOString() ?? null
 });
 
+const toSubSpan = (row: { id: number; start: Date; end: Date | null; periodType: { id: number }; }): SubSpan => ({
+    ...toSpan(row),
+    periodTypeId: row.periodType.id
+});
+
+const toSubSpanResponse = (sub: SubSpan): SubSpanResponse => ({
+    ...toSpanResponse(sub),
+    periodTypeId: sub.periodTypeId
+});
+
 const isUniqueViolation = (error: unknown): boolean =>
     error instanceof QueryFailedError
     && (error.driverError as { code?: string } | undefined)?.code === '23505';
 
 function toResponse(state: SessionState, now: Date): SessionResponse {
     if (state.status === 'none') {
-        return { status: 'none', session: null, sub: null, workedMs: 0 };
+        return { status: 'none', session: null, sub: null, subs: [], workedMs: 0 };
     }
     const openSub = state.status == 'subed' ? state.sub : null;
     const allSubs = openSub ? [...state.subs, openSub] : state.subs;
@@ -37,7 +47,8 @@ function toResponse(state: SessionState, now: Date): SessionResponse {
     return {
         status: state.status,
         session: toSpanResponse(state.session),
-        sub: state.status === 'subed' ? toSpanResponse(state.sub) : null,
+        sub: state.status === 'subed' ? toSubSpanResponse(state.sub) : null,
+        subs: allSubs.map(toSubSpanResponse),
         workedMs: computeWorkedMs(state.session, allSubs, now)
     }
 }
@@ -118,7 +129,7 @@ export class TimeTrackingService {
                 status: 'subed',
                 session: state.session,
                 subs: state.subs,
-                sub: sub
+                sub: toSubSpan(sub)
             }, now);
         });
     }
@@ -153,13 +164,10 @@ export class TimeTrackingService {
                 status: 'none',
                 session: toSpanResponse({ ...state.session, end: now }),
                 sub: null,
+                subs: [],
                 workedMs: computeWorkedMs(state.session, subs, now)
             };
         });
-    }
-
-    private get manager() {
-        return this.periods.manager;
     }
 
     private inTransaction<T>(work: (manager: EntityManager, now: Date) => Promise<T>): Promise<T> {
@@ -175,14 +183,12 @@ export class TimeTrackingService {
         if (!period) return { status: 'none' };
 
         const rows = await manager.find(SubPeriod, {
-            where: {
-                period: { id: period.id },
-                periodType: { id: PERIOD_TYPE.BREAK }
-            },
+            where: { period: { id: period.id }},
+            relations: { periodType: true },
             order: { start: 'ASC' }
         });
 
-        const subs = rows.map(toSpan);
+        const subs = rows.map(toSubSpan);
         const session = toSpan(period);
 
         const openSub = subs.find((sub) => sub.end === null);

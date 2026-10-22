@@ -7,6 +7,10 @@ export interface Span {
     end: Date | null;
 }
 
+export interface SubSpan extends Span {
+    periodTypeId: number;
+}
+
 /*
 | Action | Route        | Depuis                 | Effet                        | Vers               |
 |--------|--------------|------------------------|------------------------------|--------------------|
@@ -18,5 +22,5 @@ export interface Span {
 
 export type SessionState =
     | { status: 'none'}
-    | { status: 'period'; session: Span; subs: Span[]; }
-    | { status: 'subed'; session: Span; subs: Span[]; sub: Span; };
+    | { status: 'period'; session: Span; subs: SubSpan[]; }
+    | { status: 'subed'; session: Span; subs: SubSpan[]; sub: SubSpan; };

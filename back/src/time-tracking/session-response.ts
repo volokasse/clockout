@@ -4,9 +4,14 @@ export interface SpanResponse {
     end: string | null;
 }
 
+export interface SubSpanResponse extends SpanResponse {
+    periodTypeId: number;
+}
+
 export interface SessionResponse {
     status: 'none' | 'period' | 'subed';
     session: SpanResponse | null;
-    sub: SpanResponse | null;
+    sub: SubSpanResponse | null;
+    subs: SubSpanResponse[];
     workedMs: number;
 }

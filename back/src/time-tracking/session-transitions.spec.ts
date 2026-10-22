@@ -1,11 +1,13 @@
+import { PERIOD_TYPE } from "./period-types.js";
 import { SessionAction, SessionState, SessionStatus } from "./session-state.js";
 import { assertTransition, InvalidTransitionError } from "./session-transitions.js";
 
 const span = { id: 1, start: new Date('2026-10-22T09:00:000Z'), end: null };
+const sub = { ...span, periodTypeId: PERIOD_TYPE.BREAK };
 const states: Record<SessionStatus, SessionState> = {
     none: { status: 'none' },
     period: { status: 'period', session: span, subs: [] },
-    subed: { status: 'subed', session: span, subs: [], sub: span }
+    subed: { status: 'subed', session: span, subs: [], sub }
 };
 
 const cases: [SessionAction, SessionStatus, boolean][] = [

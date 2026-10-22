@@ -2,6 +2,7 @@ import { Repository } from "typeorm";
 import { Period } from "./entities/period.entity.js";
 import { TimeTrackingService } from "./time-tracking.service.js";
 import { InvalidTransitionError } from "./session-transitions.js";
+import { PERIOD_TYPE } from "./period-types.js";
 
 
 const NOW = new Date('2026-10-22T09:00:00Z');
@@ -43,7 +44,7 @@ describe('TimeTrackingService', () => {
 
     it('end the sub and the session when we end period while a sub is active', async () => {
         const openPeriod = { id: 1, start: NOW, end: null };
-        const openSub = { id: 7, start: NOW, end: null };
+        const openSub = { id: 7, start: NOW, end: null, periodType: { id: PERIOD_TYPE.BREAK }};
         const { service, manager } = createService(openPeriod, [openSub]);
 
         const result = await service.end();
