@@ -1,8 +1,31 @@
-<main class="main">
-  <div class="content">
-    <app-health-status></app-health-status>
-  </div>
+<header class="site-header">
+  <a class="brand" routerLink="/today" (click)="closeMenu()">Clockout</a>
+
+  <button
+    class="menu-toggle"
+    type="button"
+    aria-controls="primary-navigation"
+    [attr.aria-expanded]="menuOpen()"
+    (click)="toggleMenu()"
+  >
+    <span class="sr-only">Ouvrir ou fermer le menu</span>
+    <span class="burger-icon" aria-hidden="true"></span>
+  </button>
+
+  <nav
+    id="primary-navigation"
+    class="navigation"
+    [class.is-open]="menuOpen()"
+    aria-label="Navigation principale"
+  >
+    @for (link of links; track link.path) {
+      <a [routerLink]="link.path" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+        {{ link.label }}
+      </a>
+    }
+  </nav>
+</header>
+
+<main>
+  <router-outlet />
 </main>
-
-
-<router-outlet />

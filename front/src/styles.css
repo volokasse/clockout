@@ -1,1 +1,55 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  /* Navigation sombre */
+  --color-nav-bg: var(--mat-sys-surface-container);
+  --color-nav-text: var(--mat-sys-on-surface);
+  --color-nav-active-bg: rgb(255 255 255 / 0.12);
+  --color-nav-border: rgb(255 255 255 / 0.12);
+  --color-focus: #8ab4f8;
+
+  --header-height: 3.5rem;
+  --page-padding: 1rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

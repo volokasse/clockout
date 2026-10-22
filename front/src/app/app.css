@@ -1,0 +1,156 @@
+main {
+  padding: var(--page-padding);
+}
+
+.site-header {
+  align-items: center;
+  background: var(--color-nav-bg);
+  color: var(--color-nav-text);
+  display: flex;
+  justify-content: space-between;
+  min-height: var(--header-height);
+  padding: 0 var(--page-padding);
+  position: relative;
+  z-index: 20;
+}
+
+.brand,
+.menu-toggle {
+  position: relative;
+  z-index: 2;
+}
+
+.menu-toggle {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  height: 2.75rem;
+  justify-content: center;
+  margin-right: -0.5rem;
+  width: 2.75rem;
+}
+
+.burger-icon,
+.burger-icon::before,
+.burger-icon::after {
+  background: currentColor;
+  display: block;
+  height: 2px;
+  width: 1.5rem;
+}
+
+.burger-icon {
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.burger-icon::before,
+.burger-icon::after {
+  content: '';
+  position: absolute;
+  transition:
+    top 0.2s ease,
+    transform 0.2s ease;
+}
+
+.burger-icon::before {
+  top: -0.45rem;
+}
+
+.burger-icon::after {
+  top: 0.45rem;
+}
+
+.menu-toggle[aria-expanded='true'] .burger-icon {
+  background-color: transparent;
+}
+
+.menu-toggle[aria-expanded='true'] .burger-icon::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.menu-toggle[aria-expanded='true'] .burger-icon::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+
+.navigation {
+  background: var(--color-nav-bg);
+  display: flex;
+  flex-direction: column;
+  inset: 0;
+  opacity: 0;
+  padding-top: var(--header-height);
+  position: fixed;
+  transform: translatex(-100%);
+  transition:
+    opacity 0.25s ease,
+    transform 0.15s ease,
+    visibility 0s linear 0.25s;
+  visibility: hidden;
+  z-index: 1;
+}
+
+.navigation.is-open {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0s;
+  visibility: visible;
+}
+
+.navigation a {
+  color: inherit;
+  display: block;
+  font-size: 1.25rem;
+  padding: 1.25rem var(--page-padding);
+  text-decoration: none;
+}
+
+.navigation a.active {
+  background: var(--color-nav-active-bg);
+  font-weight: 700;
+}
+
+.sr-only {
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+@media (min-width: 48rem) {
+  .menu-toggle {
+    display: none;
+  }
+
+  .navigation {
+    background: transparent;
+    flex-direction: row;
+    inset: auto;
+    opacity: 1;
+    padding-top: 0;
+    position: static;
+    transform: none;
+    transition: none;
+    visibility: visible;
+  }
+
+  .navigation a {
+    border-bottom: 0;
+    font-size: inherit;
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  body:has(app-root.menu-open) {
+    overflow: hidden;
+  }
+}
