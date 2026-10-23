@@ -131,7 +131,10 @@ export default class TodayPage {
   }
 
   private apply(session: SessionResponse): void {
+    const received = Date.now();
     this.session.set(session);
+    this.receivedAt.set(received);
+    this.now.set(received);
     this.errorMessage.set(null);
     this.loading.set(false);
   }
