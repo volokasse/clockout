@@ -70,7 +70,7 @@ export default class TodayPage {
     const session = this.session();
     if (!session) return formatClock(0);
 
-    const elapsed = session.status === 'period' ? Math.max(0, this.now() - this.receivedAt()) : 0;
+    const elapsed = Math.max(0, this.now() - this.receivedAt());
     return formatClock(session.workedMs + elapsed);
   });
 
@@ -126,7 +126,7 @@ export default class TodayPage {
       )
       .subscribe({
         next: (session) => this.apply(session),
-        error: (error) => this.errorMessage.set(describeError(error))
+        error: (error) => this.fail(error)
       });
   }
 
