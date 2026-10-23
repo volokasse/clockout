@@ -12,6 +12,7 @@
 
   <mat-card-content>
     <p class="status" [attr.data-status]="status()"> {{ statusLabel() }} </p>
+    <p class="clock" aria-label="Temps travaillé">{{ clock() }}</p>
 
     @if (session()?.session; as period) {
       <p class="arrival">
@@ -32,3 +33,27 @@
     }
   </mat-card-content>
 </mat-card>
+<mat-card-actions class="actions">
+  @if (canStart()) {
+    <button matButton="filled" [disabled]="busy()" (click)="start()">
+      Commencer
+    </button>
+  }
+  @if (canStartSub()) {
+    @for (type of subTypes; track type.id) {
+      <button matButton="tonal" [disabled]="busy()" (click)="startSub(type.id)">
+        {{ type.startLabel }}
+      </button>
+    }
+  }
+  @if (canEndSub()) {
+    <button matButton="filled" [disabled]="busy()" (click)="endSub()">
+      {{ currentSubType()?.endLabel ?? 'Reprendre' }}
+    </button>
+  }
+  @if (canEnd()) {
+    <button matButton="outlined" [disabled]="busy()" (click)="end()">
+      Terminer
+    </button>
+  }
+</mat-card-actions>
