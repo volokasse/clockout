@@ -10,11 +10,29 @@
       "url": "http://localhost:4200/"
     },
     {
-      "name": "ng test",
-      "type": "chrome",
+      // Vitest tourne dans Node (jsdom), pas dans Chrome : on lance donc `ng test --debug`
+      // sous le debugger Node de VS Code, qui s'attache tout seul au worker Vitest.
+      "name": "ng test (debug)",
+      "type": "node",
       "request": "launch",
-      "preLaunchTask": "npm: test",
-      "url": "http://localhost:9876/debug.html"
+      "program": "${workspaceFolder}/node_modules/@angular/cli/bin/ng.js",
+      "args": ["test", "--debug", "--no-watch"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      // Idem, mais uniquement pour le fichier .spec.ts actuellement ouvert.
+      "name": "ng test (debug) - fichier courant",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@angular/cli/bin/ng.js",
+      "args": ["test", "--debug", "--no-watch", "--include", "${relativeFile}"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
     }
   ]
 }
