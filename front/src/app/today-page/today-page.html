@@ -1,1 +1,34 @@
-<p>today-page works!</p>
+@if(errorMessage(); as message) {
+  <div class="alert" role="alert">
+    <span>{{ message }}</span>
+    <button matButton (click)="refresh()">Réessayer</button>
+  </div>
+}
+
+<mat-card appearance="outlined">
+  @if(loading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Chargement de la session" />
+  }
+
+  <mat-card-content>
+    <p class="status" [attr.data-status]="status()"> {{ statusLabel() }} </p>
+
+    @if (session()?.session; as period) {
+      <p class="arrival">
+        Arrivée à <strong>{{ period.start | date: 'HH:mm' }}</strong>
+      </p>
+    }
+
+    @if (subs().length > 0) {
+      <h2>Pauses et veilles</h2>
+      <ul class="subs">
+        @for (sub of subs(); track sub.id) {
+          <li>
+            <span class="sub-label">{{ sub.label }}</span>
+            {{ sub.start | date: 'HH:mm' }} → {{ sub.end ? (sub.end | date: 'HH:mm') : 'en cours' }}
+          </li>
+        }
+      </ul>
+    }
+  </mat-card-content>
+</mat-card>

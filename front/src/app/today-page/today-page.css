@@ -1,0 +1,57 @@
+h1 {
+  margin: 0 0 16px;
+  font: var(--mat-sys-headline-medium);
+}
+h2 {
+  margin: 16px 0 8px;
+  font: var(--mat-sys-title-small);
+}
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+.status {
+  margin: 16px 0 0;
+  font: var(--mat-sys-title-medium);
+}
+.status[data-status='period'] {
+  color: var(--mat-sys-primary);
+}
+.status[data-status='subed'] {
+  color: var(--mat-sys-tertiary);
+}
+.clock {
+  margin: 4px 0 8px;
+  font-size: 3.5rem;
+  line-height: 1.1;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+}
+.arrival {
+  margin: 0;
+}
+.subs {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sub-label {
+  display: inline-block;
+  min-width: 4.5rem;
+  font-weight: 500;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+}
