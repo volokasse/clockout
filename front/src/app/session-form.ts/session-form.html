@@ -1,0 +1,62 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="row">
+    <mat-form-field>
+      <mat-label id="startLabel">Arrivée</mat-label>
+      <input matInput type="datetime-local" formControlName="start" aria-labelledby="startLabel" />
+      @if (form.controls.start.touched && form.controls.start.hasError('required')) {
+        <mat-error>L'arrivée est obligatoire.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label id="endLabel">Départ</mat-label>
+      <input matInput type="datetime-local" formControlName="end" aria-labelledby="endLabel" />
+      <mat-hint>Vide: session en cours</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <mat-form-field class="full">
+    <mat-label id="noteLabel">Note</mat-label>
+    <textarea matInput formControlName="note" rows="2" maxlength="500" aria-labelledby="noteLabel"></textarea>
+  </mat-form-field>
+
+  <fieldset formArrayName="subs">
+    <legend>Pauses et veilles</legend>
+
+    @for (group of subs.controls; track group; let i = $index) {
+      <div class="sub" [formGroupName]="i">
+        <mat-form-field class="type">
+          <mat-label>Type</mat-label>
+          <mat-select formControlName="periodTypeId">
+            @for (type of subTypes; track type.id) {
+              <mat-option [value]="type.id">{{ type.startLabel }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label id="input-start-${i}">Début</mat-label>
+          <input matInput type="datetime-local" formControlName="start" aria-labelledby="input-start-${i}" />
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label id="input-end-${i}">Fin</mat-label>
+          <input matInput type="datetime-local" formControlName="end" aria-labelledby="input-end-${i}" />
+        </mat-form-field>
+
+        <button matButton type="button" (click)="removeSub(i)" [attr.aria-label]="'Retirer la pause ' + (i + 1)">
+          Retirer
+        </button>
+      </div>
+    } @empty {
+      <p class="empty">Aucune pause.</p>
+    }
+
+    <button matButton="tonal" type="button" (click)="addSub()">Ajouter une pause</button>
+  </fieldset>
+
+  <div class="actions">
+    <button matButton type="button" (click)="cancelled.emit()" [disabled]="busy()">Annuler</button>
+    <button matButton="filled" type="submit" [disabled]="busy()">Enregistrer</button>
+  </div>
+</form>

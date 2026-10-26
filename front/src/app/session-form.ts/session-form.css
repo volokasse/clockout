@@ -1,0 +1,55 @@
+:host {
+  display: block
+}
+
+.row,
+.sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.row mat-form-field,
+.sub mat-form-field {
+  flex: 1 1 12rem;
+}
+
+.sub .type {
+  flex: 0 1 9rem;
+}
+
+.full {
+  width: 100%;
+}
+
+fieldset {
+  margin: 8px 0 16px;
+  padding: 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+
+legend {
+  padding: 0 8px;
+  font: var(--mat-sys-title-small);
+}
+
+.empty {
+  margin: 0 0 12px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.violations {
+  margin: 0 0 16px;
+  padding: 12px 16px 12px 12px;
+  border-radius: 12px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
