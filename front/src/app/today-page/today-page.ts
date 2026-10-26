@@ -66,12 +66,19 @@ export default class TodayPage {
     }));
   });
 
+  private readonly sinceReceived = computed(() => {
+    if (this.status() === 'none') return 0;
+    return Math.max(0, this.now() - this.receivedAt());
+  });
+
   protected readonly clock = computed(() => {
     const session = this.session();
-    if (!session) return formatClock(0);
+    return formatClock(session ? session.workedMs + this.sinceReceived() : 0);
+  });
 
-    const elapsed = Math.max(0, this.now() - this.receivedAt());
-    return formatClock(session.workedMs + elapsed);
+  protected readonly elapsedClock = computed(() => {
+    const session = this.session();
+    return formatClock(session ? session.elapsedMs + this.sinceReceived() : 0);
   });
 
   constructor() {
@@ -107,7 +114,7 @@ export default class TodayPage {
   }
 
   protected endSub(): void {
-    this.run(() => this.api.endSub());
+    this.run(() => this.api.endsub());
   }
 
   protected end(): void {

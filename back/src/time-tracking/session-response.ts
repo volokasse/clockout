@@ -14,4 +14,5 @@ export interface SessionResponse {
     sub: SubSpanResponse | null;
     subs: SubSpanResponse[];
     workedMs: number;
+    elapsedMs: number;
 }

@@ -1,6 +1,12 @@
+import { SUBTRACTED_TYPES } from "./period-types.js";
+
 export interface TimeSpan {
     start: Date,
     end: Date | null
+}
+
+export interface TypedTimeSpan extends TimeSpan {
+    periodTypeId: number;
 }
 
 export function computeWorkedMs(session: TimeSpan, subs: TimeSpan[], now: Date): number {
@@ -22,4 +28,17 @@ export function formatDuration(ms: number): string {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = String(totalMinutes % 60).padStart(2, '0');
     return `${hours}h${minutes}`;
+}
+
+export function computeElapsedMs(session: TimeSpan, now: Date): number {
+    return Math.max(0, (session.end ?? now).getTime() - session.start.getTime());
+}
+
+export function computeSessionWorkedMs(
+    session: TimeSpan,
+    subs: TypedTimeSpan[],
+    now: Date,
+    substracted: readonly number[] = SUBTRACTED_TYPES
+): number {
+    return computeWorkedMs(session, subs.filter((sub) => substracted.includes(sub.periodTypeId)), now);
 }

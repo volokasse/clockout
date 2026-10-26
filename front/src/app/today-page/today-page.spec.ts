@@ -8,14 +8,15 @@ import { provideHttpClient } from '@angular/common/http';
 const CURRENT_URL = '/api/time-tracking/current';
 const START_URL = '/api/time-tracking/start';
 
-const NONE: SessionResponse = { status: 'none', session: null, sub: null, subs: [], workedMs: 0 };
+const NONE: SessionResponse = { status: 'none', session: null, sub: null, subs: [], workedMs: 0, elapsedMs: 0 };
 
 const WORKING: SessionResponse = {
   status: 'period',
   session: { id: 1, start: '2026-10-22T07:00:00.000Z', end: null },
   sub: null,
   subs: [],
-  workedMs: 60_000
+  workedMs: 60_000,
+  elapsedMs: 60_000
 };
 
 const OPEN_BREAK: SubSpan = {
@@ -141,5 +142,34 @@ describe('TodayPage', () => {
     fixture.destroy();
 
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('show the elapsed time next to the worked time', () => {
+    open(WORKING);
+
+    expect(page().querySelector('.elapsed')?.textContent).toContain('00:01:00');
+  });
+
+  it('does not run the counters when no session is open', () => {
+    vi.useFakeTimers();
+    open(NONE);
+
+    vi.advanceTimersByTime(5000);
+    fixture.detectChanges();
+
+    expect(clock()).toBe('00:00:00');
+    expect(page().querySelector('.elapsed')?.textContent).toContain('00:00:00');
+  });
+
+  it('realigns on the server value after each refresh (no double counting)', () => {
+    vi.useFakeTimers();
+    open(WORKING);
+
+    vi.advanceTimersByTime(30_000);
+    httpMock.expectOne(CURRENT_URL).flush({ ...WORKING, workedMs: 90_000, elapsedMs: 90_000 });
+    fixture.detectChanges();
+
+    expect(clock()).toBe('00:01:30');
+    expect(page().querySelector('.elapsed')?.textContent).toContain('00:01:30');
   });
 });

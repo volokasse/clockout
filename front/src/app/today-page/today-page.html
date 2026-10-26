@@ -13,6 +13,7 @@
   <mat-card-content>
     <p class="status" [attr.data-status]="status()"> {{ statusLabel() }} </p>
     <p class="clock" aria-label="Temps travaillé">{{ clock() }}</p>
+    <p class="elapsed">Écoulé depuis l'arrivée : <strong>{{ elapsedClock() }}</strong></p>
 
     @if (session()?.session; as period) {
       <p class="arrival">

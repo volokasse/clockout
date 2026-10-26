@@ -34,6 +34,11 @@ h2 {
   font-weight: 300;
   font-variant-numeric: tabular-nums;
 }
+.elapsed {
+  margin: 0 0 8px;
+  color: var(--mat-sys-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
 .arrival {
   margin: 0;
 }

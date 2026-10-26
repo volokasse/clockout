@@ -24,7 +24,7 @@ export class TimeTrackingApi {
     return this.http.post<SessionResponse>(this.prepUrl('sub'), { periodTypeId });
   }
 
-  endSub() {
+  endsub() {
     return this.http.post<SessionResponse>(this.prepUrl('endsub'), {});
   }
 
