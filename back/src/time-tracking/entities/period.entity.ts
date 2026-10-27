@@ -15,6 +15,9 @@ export class Period {
     @Column({ type: 'timestamptz', nullable: true })
     end: Date | null;
 
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    note: string | null;
+
     @ManyToOne(() => PeriodType, { nullable: false })
     @JoinColumn()
     periodType: Relation<PeriodType>;

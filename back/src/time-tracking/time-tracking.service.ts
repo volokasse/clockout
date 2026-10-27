@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 import { Period } from './entities/period.entity.js';
 import type { PeriodResponse } from './period-response.js';
 import { SessionState, Span, SubSpan } from './session-state.js';
@@ -9,8 +9,8 @@ import { Clock } from './clock.js';
 import { SubPeriod } from './entities/sub-period.entity.js';
 import { PERIOD_TYPE } from './period-types.js';
 import { assertTransition, InvalidTransitionError } from './session-transitions.js';
-import { computeWorkedMs } from './worked-time.js';
-import { computeElapsedMs, computeSessionWorkedMs } from './worked-time.js';
+import { computeWorkedMs, computeElapsedMs } from './worked-time.js';
+import { isUniqueViolation } from './is-unique-violation.js';
 
 const toSpan = (row: { id: number; start: Date; end: Date | null }): Span => ({
     id: row.id,
@@ -33,10 +33,6 @@ const toSubSpanResponse = (sub: SubSpan): SubSpanResponse => ({
     ...toSpanResponse(sub),
     periodTypeId: sub.periodTypeId
 });
-
-const isUniqueViolation = (error: unknown): boolean =>
-    error instanceof QueryFailedError
-    && (error.driverError as { code?: string } | undefined)?.code === '23505';
 
 function toResponse(state: SessionState, now: Date): SessionResponse {
     if (state.status === 'none') {

@@ -7,6 +7,8 @@ import { PeriodType } from "./entities/period-type.entity.js";
 import { Preferences } from "../preferences/entities/preferences.entity.js";
 import { TimeTrackingService } from "./time-tracking.service.js";
 import { Clock, SystemClock } from "./clock.js";
+import { HistoryService } from "./history.service.js";
+import { HistoryController } from "./history.controller.js";
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -17,9 +19,10 @@ import { Clock, SystemClock } from "./clock.js";
     ])],
     providers: [
         TimeTrackingService,
+        HistoryService,
         { provide: Clock, useClass: SystemClock }
     ],
-    controllers: [TimeTrackingController]
+    controllers: [TimeTrackingController, HistoryController]
 })
 export class TimeTrackingModule {
 
