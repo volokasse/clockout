@@ -1,4 +1,5 @@
 import { SessionDetail, SessionPayload } from "./history.model";
+import { SessionDraft } from "./session-rules";
 import { PERIOD_TYPE, SubTypeId } from "./sub-types";
 
 export interface SubFormValue {
@@ -62,4 +63,21 @@ export function toPayload(value: SessionFormValue): SessionPayload {
       end: fromLocalInput(sub.end)
     }))
   };
+}
+
+export function toDraft(value: SessionFormValue): SessionDraft | null {
+  const start = fromLocalInput(value.start);
+  if (!start) return null;
+  const subs: SessionDraft['subs'] = [];
+  for (const sub of value.subs) {
+    const subStart = fromLocalInput(sub.start);
+    if (!subStart) return null;
+    subs.push({
+      periodTypeId: sub.periodTypeId,
+      start: new Date(subStart),
+      end: sub.end ? new Date(fromLocalInput(sub.end) ?? subStart) : null
+    });
+  }
+  const end = fromLocalInput(value.end);
+  return { start: new Date(start), end: end ? new Date(end) : null, subs };
 }

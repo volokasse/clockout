@@ -1,18 +1,27 @@
-import { FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
+import { AbstractControl, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from "@angular/forms";
 import { SUB_TYPES, SubTypeId } from "../time-tracking/sub-types";
 import { MatButtonModule } from "@angular/material/button";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
-import { Component, effect, inject, input, output } from "@angular/core";
-import { SessionDetail, SessionPayload } from "../time-tracking/history.model";
-import { emptySub, SubFormValue, toFormValue, toPayload } from "../time-tracking/session-form.model";
+import { Component, effect, inject, input, output, signal } from "@angular/core";
+import { SessionDetail, SessionPayload, Violation } from "../time-tracking/history.model";
+import { emptySub, SessionFormValue, SubFormValue, toDraft, toFormValue, toPayload } from "../time-tracking/session-form.model";
+import { validateDraft } from "../time-tracking/session-rules";
+import { describeViolation } from "../time-tracking/violation-messages";
 
 type SubGroup = FormGroup<{
   periodTypeId: FormControl<SubTypeId>;
   start: FormControl<string>;
   end: FormControl<string>;
 }>;
+
+const sessionRules: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const draft = toDraft((control as FormGroup).getRawValue() as SessionFormValue);
+  if (!draft) return null;
+  const violations = validateDraft(draft, new Date());
+  return violations.length > 0 ? { rules: violations } : null;
+};
 
 @Component({
   selector: 'app-session-form',
@@ -29,14 +38,20 @@ export class SessionForm {
   readonly save = output<SessionPayload>();
   readonly cancelled = output<void>();
 
+  readonly serverViolations = input<Violation[]>([]);
+
   protected readonly subTypes = SUB_TYPES;
-  protected readonly form = this.fb.group({
+  protected readonly submitted = signal(false);
+
+  protected readonly form = this.fb.group(
+    {
       start: this.fb.control('', Validators.required),
       end: this.fb.control(''),
-      note: this.fb.control('', Validators.maxLength(500)
-    ),
-    subs: this.fb.array<SubGroup>([])
-  });
+      note: this.fb.control('', Validators.maxLength(500)),
+      subs: this.fb.array<SubGroup>([])
+    },
+    { validators: sessionRules }
+  );
 
   constructor() {
     effect(() => this.load(this.session()));
@@ -56,11 +71,19 @@ export class SessionForm {
   }
 
   protected submit(): void {
+    this.submitted.set(true);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     this.save.emit(toPayload(this.form.getRawValue()));
+  }
+
+  protected messages(): string[] {
+    const client = this.form.dirty || this.submitted()
+      ? ((this.form.errors?.['rules'] ?? []) as Violation[])
+      : [];
+    return [...client, ...this.serverViolations()].map(describeViolation);
   }
 
   private load(session: SessionDetail | null): void {
@@ -70,6 +93,7 @@ export class SessionForm {
     this.form.patchValue({ start: value.start, end: value.end, note: value.note });
     this.form.markAsPristine();
     this.form.markAsUntouched();
+    this.submitted.set(false);
   }
 
   private newSub(value: SubFormValue): SubGroup {

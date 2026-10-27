@@ -1,1 +1,109 @@
-<p>history-page works!</p>
+<h1>Historique</h1>
+
+<form class="toolbar" [formGroup]="filter" (ngSubmit)="load()">
+  <mat-form-field>
+    <mat-label id="filter-from">Du</mat-label>
+    <input matInput type="date" formControlName="from" aria-labelledby="filter-from" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label id="filter-to">Au</mat-label>
+    <input matInput type="date" formControlName="to" aria-labelledby="filter-to" />
+  </mat-form-field>
+
+  <button matButton="tonal" type="submit">Filtrer</button>
+  <span class="spacer"></span>
+  <button matButton="filled" type="button" (click)="openEditor(null)">Ajouter une session</button>
+</form>
+
+@if (errorMessage(); as message) {
+  <div class="alert" role="alert">
+    <span>{{ message }}</span>
+    <button matButton (click)="load()">Réessayer</button>
+  </div>
+}
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Chargement de l'historique" />
+}
+
+<div clas="table-wrap">
+  <table mat-table [dataSource]="sessions()" aria-label="Historique des sessions">
+    <ng-container matColumnDef="date">
+      <th mat-header-cell *matHeaderCellDef>Date</th>
+      <td mat-cell *matCellDef="let session">
+        {{ session.start | date: 'dd/MM/yyyy' }}
+        <small class="muted">n° {{ session.id }}</small>
+        @if (session.note) {
+          <small class="note">{{ session.note }}</small>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="arrival">
+      <th mat-header-cell *matHeaderCellDef>Arrivée</th>
+      <td mat-cell *matCellDef="let session">{{ session.start | date: 'HH:mm' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="departure">
+      <th mat-header-cell *matHeaderCellDef>Départ</th>
+      <td mat-cell *matCellDef="let session">
+        @if (session.end) {
+          {{ session.end | date: (sameDay(session) ? 'HH:mm' : 'dd/MM HH:mm') }}
+        } @else {
+          <span class="muted">-</span>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="subs">
+      <th mat-header-cell *matHeaderCellDef>Sous-périodes</th>
+      <td mat-cell *matCellDef="let session">
+        @for (sub of session.subs; track sub.id) {
+          <div class="sub">
+            {{ subLabel(sub.periodTypeId) }}
+            {{ sub.start | date: 'HH:mm' }}-{{ sub.end ? (sub.end | date: 'HH:mm') : 'en cours' }}
+          </div>
+        } @empty {
+          <span class="muted">Aucune</span>
+        }
+    </ng-container>
+
+    <ng-container matColumnDef="duration">
+      <th mat-header-cell *matHeaderCellDef>Durée</th>
+      <td mat-cell *matCellDef="let session">
+        <strong>{{ formatDuration(session.workedMs) }}</strong>
+        @if (session.elapsedMs !== session.workedMs) {
+          <small class="muted">sur {{ formatDuration(session.elapsedMs) }}</small>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Statut</th>
+      <td mat-cell *matCellDef="let session">
+        <span class="badge" [class.open]="session.status === 'open'">
+          {{ session.status === 'open' ? 'En cours' : 'Terminée' }}
+        </span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef><span class="sr-only">Actions</span></th>
+      <td mat-cell *matCellDef="let session">
+        <button matButton type="button" (click)="openEditor(session)"
+          [attr.aria-label]="'Corriger la session n° ' + session.id">
+          Corriger
+        </button>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns"></tr>
+
+    <tr class="mat-row" *matNoDataRow>
+      <td class="empty" [attr.colspan="columns.length"]>
+        {{ loading() ? 'Chargement…' : 'Aucune session sur cette période.' }}
+      </td>
+    </tr>
+  </table>
+</div>

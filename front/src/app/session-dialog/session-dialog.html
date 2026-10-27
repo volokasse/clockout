@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+<mat-dialog-content>
+  @if (errorMessage(); as message) {
+    <p class="alert" role="alert">{{ message }}</p>
+  }
+
+  <app-session-form
+    [session]="data.session"
+    [busy]="busy()"
+    [serverViolations]="violations()"
+    (save)="save($event)"
+    (cancelled)="cancel()"
+  />
+</mat-dialog-content>

@@ -1,5 +1,5 @@
 import { SessionDetail } from "./history.model";
-import { fromLocalInput, toFormValue, toLocalInput, toPayload } from "./session-form.model";
+import { fromLocalInput, toDraft, toFormValue, toLocalInput, toPayload } from "./session-form.model";
 
 
 describe('convert date <-> field datetime-local', () => {
@@ -51,5 +51,13 @@ describe('form <-> API', () => {
 
     expect(toPayload(value).note).toBeNull();
     expect(toPayload({ ...value, note: '   Client   ' }).note).toBe('Client');
+  });
+
+  it('only produce a draft if the inputed dates are completes', () => {
+    const value = toFormValue(session);
+
+    expect(toDraft({ ...value, start: '' })).toBeNull();
+    expect(toDraft({ ...value, subs: [{ ...value.subs[0], start: '' }]})).toBeNull();
+    expect(toDraft(value)?.end).toBeNull();
   });
 });

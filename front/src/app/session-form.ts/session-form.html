@@ -35,7 +35,7 @@
         </mat-form-field>
 
         <mat-form-field>
-          <mat-label id="input-start-${i}">Début</mat-label>
+          <mat-label [id]="`input-start-${i}`">Début</mat-label>
           <input matInput type="datetime-local" formControlName="start" aria-labelledby="input-start-${i}" />
         </mat-form-field>
 
@@ -54,6 +54,14 @@
 
     <button matButton="tonal" type="button" (click)="addSub()">Ajouter une pause</button>
   </fieldset>
+
+  @if (messages().length > 0) {
+    <ul class="violations" role="alert">
+      @for (message of messages(); track $index) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
 
   <div class="actions">
     <button matButton type="button" (click)="cancelled.emit()" [disabled]="busy()">Annuler</button>

@@ -14,6 +14,12 @@ export function describeError(error: unknown): string {
     if (error.status === 400) {
       return "Le serveur a refusé la requête.";
     }
+    if (error.status === 404) {
+      return "Cette session n'existe plus.";
+    }
+    if (error.status === 422) {
+      return "Les horaires saisis sont incohérents.";
+    }
   }
   return "Une erreur inattendue est survenue.";
 }

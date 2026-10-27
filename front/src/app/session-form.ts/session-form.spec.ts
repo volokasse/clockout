@@ -12,7 +12,7 @@ const SESSION: SessionDetail = {
   status: 'closed',
   subs: [
     { id: 1, start: '2026-10-22T10:00:00.000Z', end: '2026-10-22T11:00:00.000Z', periodTypeId: 2 },
-    { id: 2, start: '2026-10-22T23:00:00.000Z', end: '2026-10-22T12:30:00.000Z', periodTypeId: 3 }
+    { id: 2, start: '2026-10-22T12:00:00.000Z', end: '2026-10-22T12:30:00.000Z', periodTypeId: 3 }
   ],
   workedMs: 0,
   elapsedMs: 0
@@ -36,7 +36,39 @@ describe('SessionForm', () => {
     fixture.detectChanges();
   }
 
+  async function type(field: HTMLInputElement, value: string) {
+    field.value = value;
+    field.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
   beforeEach(() => TestBed.configureTestingModule({ imports: [SessionForm] }));
+
+  it('refuse a start before the end and explains it', async () => {
+    await open(SESSION);
+
+    await type(inputs()[1], toLocalInput('2026-10-22T06:00:00.000Z'));
+    button('Enregistrer').click();
+    fixture.detectChanges();
+
+    expect(emitted).toHaveLength(0);
+    expect(root().querySelector('[role="alert"]')?.textContent).toContain(
+      "L'heure de départ doit être après l'heure d'arrivée."
+    );
+  });
+
+  it('refuse a sub period outside of the session', async () => {
+    await open(SESSION);
+
+    await type(inputs()[2], toLocalInput('2026-10-22T05:00:00.000Z'));
+    await type(inputs()[3], toLocalInput('2026-10-22T05:30:00.000Z'));
+    button('Enregistrer').click();
+    fixture.detectChanges();
+
+    expect(emitted).toHaveLength(0);
+    expect(root().querySelector('[role="alert"]')?.textContent).toContain('Pause 1 : Doit rester dans les horaires');
+  });
 
   describe('préremplissage', () => {
     it('retake schedules, the note and subs of the session', async () => {
@@ -121,6 +153,17 @@ describe('SessionForm', () => {
 
       expect(emitted).toHaveLength(0);
       expect(root().textContent).toContain("L'arrivée est obligatoire.");
+    });
+
+    it('display the violations answered by the server', async () => {
+      await open(SESSION);
+
+      fixture.componentRef.setInput('serverViolations', [
+        { code: 'SESSIONS_OVERLAP', path: 'start', message: 'The session overlaps session 3' }
+      ]);
+      fixture.detectChanges();
+
+      expect(root().querySelector('[role="alert"]')?.textContent).toContain('chevauche une autre session');
     });
   });
 });
