@@ -11,14 +11,18 @@ import { HistoryService } from "./history.service.js";
 import { HistoryController } from "./history.controller.js";
 import { WeeklyReportService } from "./weekly-report.service.js";
 import { WeeklyReportController } from "./weekly-report.controller.js";
+import { PreferencesModule } from "../preferences/preferences.module.js";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        Period,
-        SubPeriod,
-        PeriodType,
-        Preferences
-    ])],
+    imports: [
+        TypeOrmModule.forFeature([
+            Period,
+            SubPeriod,
+            PeriodType,
+            Preferences
+        ]),
+        PreferencesModule
+    ],
     providers: [
         TimeTrackingService,
         HistoryService,

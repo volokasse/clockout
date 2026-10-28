@@ -5,16 +5,18 @@ import { Clock } from './clock.js';
 import { Period } from './entities/period.entity.js';
 import { addDays, localDateOf, mondayOf, REPORT_TIME_ZONE } from './week-rules.js';
 import type { CalendarDate } from './week-rules.js';
-import { buildWeeklyTotals } from './weekly-report.js';
+import { buildWeeklyTotals, computeDelta } from './weekly-report.js';
 import type { WeeklySession } from './weekly-report.js';
 import type { WeeklyReportResponse } from './weekly-report-response.js';
+import { PreferencesService } from '../preferences/preferences.service.js';
 
 @Injectable()
 export class WeeklyReportService {
     constructor(
         @InjectRepository(Period)
         private readonly periods: Repository<Period>,
-        private readonly clock: Clock
+        private readonly clock: Clock,
+        private readonly preferences: PreferencesService
     ) {}
 
     // date: any day of the wanted week. Default: the current week (in Paris).
@@ -23,7 +25,10 @@ export class WeeklyReportService {
         const weekStart = mondayOf(date ?? localDateOf(now));
         const nextWeekStart = addDays(weekStart, 7);
 
-        const sessions = await this.findSessions(weekStart, nextWeekStart);
+        const [sessions, targetMinutes] = await Promise.all([
+            this.findSessions(weekStart, nextWeekStart),
+            this.preferences.getWeeklyTargetMinutes()
+        ]);
         const totals = buildWeeklyTotals(weekStart, sessions, now);
 
         return {
@@ -32,7 +37,11 @@ export class WeeklyReportService {
             weekEnd: addDays(weekStart, 6),
             previousWeekStart: addDays(weekStart, -7),
             nextWeekStart,
-            ...totals
+            days: totals.days,
+            totalMinutes: totals.totalMinutes,
+            targetMinutes,
+            deltaMinutes: computeDelta(totals.totalMinutes, targetMinutes),
+            incompleteSessions: totals.incompleteSessions
         };
     }
 

@@ -9,5 +9,7 @@ export interface WeeklyReportResponse {
     nextWeekStart: CalendarDate;
     days: DayTotal[];
     totalMinutes: number;
+    targetMinutes: number;
+    deltaMinutes: number;
     incompleteSessions: IncompleteSession[];
 }

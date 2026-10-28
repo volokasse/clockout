@@ -70,3 +70,7 @@ export function buildWeeklyTotals(
 
     return { days, totalMinutes, incompleteSessions };
 }
+
+export function computeDelta(totalMinutes: number, targetMinutes: number): number {
+    return totalMinutes - targetMinutes;
+}

@@ -1,4 +1,4 @@
-import { buildWeeklyTotals } from './weekly-report.js';
+import { buildWeeklyTotals, computeDelta } from './weekly-report.js';
 import type { WeeklySession } from './weekly-report.js';
 
 const WEEK = '2026-01-05';
@@ -48,5 +48,17 @@ describe('buildWeeklyTotals', () => {
         expect(totals.incompleteSessions).toEqual([
             { id: 2, date: '2026-01-09', start: '2026-01-09T07:00:00.000Z' }
         ]);
+    });
+});
+
+describe('computeDelta', () => {
+    it.each([
+        ['sous l\'objectif', 1380, 2100, -720],
+        ['au-dessus de l\'objectif', 2250, 2100, 150],
+        ['exactement l\'objectif', 2100, 2100, 0],
+        ['sans objectif', 450, 0, 450],
+        ['semaine vide', 0, 2100, -2100]
+    ])('%s : %i - %i = %i', (_label, total, target, expected) => {
+        expect(computeDelta(total, target)).toBe(expected);
     });
 });
