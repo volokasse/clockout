@@ -171,13 +171,12 @@ describe('HistoryPage', () => {
       expect(rows()).toHaveLength(2);
     });
 
-    it('does not reload the list when the dialog is cancelled', () => {
+    it('does not reload the list when the dialog is cancelled', () => { // NOSONAR
       open([CLOSED]);
       mockDialog(false);
 
       button('Ajouter une session').click();
-
-      expect(httpMock.expectNone((req) => req.url === '/api/sessions')).toHaveLength(0);
+      httpMock.expectNone((req) => req.url === '/api/sessions');
     });
   });
 });
