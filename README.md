@@ -5,6 +5,7 @@ Cette application a pour but de me permettre d'avoir une vue d'ensemble sur mes 
 ## Description
 
 L'application est découpée en 3 pages distinctes :
+
 1. **Today**\
 Cette page va servir à contrôler la majoritée des actions de l'application.
     - L'utilisateur va pouvoir démarrer et terminer une période de travail.
@@ -24,16 +25,15 @@ Cette page va servir à afficher des statistiques pertinentes pour l'utilisateur
     - la balance positive ou négative de son temps de travail total (sur une période donnée)
     - la répartition général de son temps de travail sur le mois en cours (par sous-périodes)
 
+## Utilisation
 
-# Utilisation
-
-## Prérequis
+### Prérequis
 
 - Node.js compatible avec le front, npm, git.
 - Angular et NestJS cli à jour.
 - Un gestionnaire de conteneurs fonctionnel (Docker Desktop).
 
-## Installation
+### Installation
 
 1. Dans front : ```npm ci```
 2. Dans back : ```npm ci```
@@ -41,37 +41,62 @@ Cette page va servir à afficher des statistiques pertinentes pour l'utilisateur
 4. Copier ```back/.env.example``` vers ```back/.env```
 5. Adapter les identifiants et informations si nécessaire
 
-## Démarrage (trois terminaux)
+### Démarrage (trois terminaux)
 
 1. Dans infra : ```docker compose up -d```
 2. Dans front : ```npm start```
 3. Dans back : ```npm run start:dev```
 
-## Accès
+### Accès
 
 - Front : [http://localhost:4200](http://localhost:4200)
 - Back (API) : [http://localhost:3000/api/health](http://localhost:3000/api/health)
 - PostgreSQL : 127.0.0.1:5432, DB : clockout
 - Identifiants locaux : voir ```infra/.env```
 
-## Arrêt
+### Arrêt
 
 - Ctrl+C pour le front et le back
 - Dans infra : ```docker compose down``` pour la DB
-    - Ne pas utiliser l'argument -v dans la commande sous risque de perte des données.
+  - Ne pas utiliser l'argument -v dans la commande sous risque de perte des données.
 
-## Tests et vérifications
+### Tests et vérifications
 
 - npm run build dans front puis back.
 - npm run test dans front puis back.
 - Bouton vérifier l'API : succès, panne, reprise.
 - Persistance des données du PostgreSQL vérifiée après down/up.
 
-## Back
+### Back
 
-### Database migrations
+#### Database migrations
+
 - ```npm run migration:generate -- src/database/migrations/MigrationName``` to generate a migration file from changes applied to entities in project
 - ```npm run migration:create -- src/database/migrations/MigrationName``` to create a migration file that you can populate freely
 - ```npm run migration:show``` to list all migrations and their status
 - ```npm run migration:run``` to run waiting migrations
 - ```npm run migration:revert``` to revert last migration
+
+## SPECIFIC RULES
+
+### Weekly report rules
+
+These rules apply to the **Report** screen (Results page) and to the `GET /api/reports/weekly` route.
+
+| Rule | Decision |
+| ------- | ---------- |
+| Week | From Monday 00:00 (inclusive) to the following Monday 00:00 (exclusive) |
+| Time zone | Europe/Paris (`REPORT_TIME_ZONE` constant), never the machine's time zone |
+| Assignment | A session counts toward the day (Paris time) on which it **starts** |
+| Midnight | A session that crosses midnight counts in full toward its start day |
+| Open sessions | Excluded from totals; listed under "incomplete sessions" |
+| Session duration | Existing business calculation (`computeSessionWorkedMs`), never recomputed elsewhere |
+| Rounding | Whole minutes, per day (rounded down); total = sum of the seven days |
+| Empty week | Seven days at zero, total at zero |
+| Delta | Time worked − target (negative = behind) |
+
+Examples (Paris time):
+
+- Sunday 21:00 → Monday 01:00: counts toward **Sunday**, in the week that ends that Sunday.
+- Monday 00:30 → 01:30: counts toward **Monday**, even though it is still Sunday in UTC.
+- Session with no end time: included in no total; it triggers a warning.
