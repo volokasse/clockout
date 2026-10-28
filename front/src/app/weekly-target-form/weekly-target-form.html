@@ -1,0 +1,63 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="fields">
+    <mat-form-field>
+      <mat-label id="hours">Heures</mat-label>
+      <input
+        matInput
+        type="number"
+        inputmode="numeric"
+        step="1"
+        [attr.min]="0"
+        [attr.max]="maxHours"
+        formControlName="hours"
+        [errorStateMatcher]="hoursMatcher"
+        aria-labelledby="hours"
+      />
+      <mat-error>
+        @if (form.controls.hours.hasError('required')) {
+          Saisissez un nombre d'heures.
+        } @else if (form.controls.hours.hasError('integer')) {
+          Les heures doivent être un nombre entier.
+        } @else {
+          Les heures vont de 0 à {{ maxHours }}.
+        }
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label id="minutes">Minutes</mat-label>
+      <input
+        matInput
+        type="number"
+        inputmode="numeric"
+        step="1"
+        [attr.min]="0"
+        [attr.max]="maxMinutes"
+        formControlName="minutes"
+        [errorStateMatcher]="minutesMatcher"
+        aria-labelledby="minutes"
+      />
+      <mat-error>
+        @if (form.controls.minutes.hasError('required')) {
+          Saisissez un nombre de minutes.
+        } @else if (form.controls.minutes.hasError('integer')) {
+          Les minutes doivent être un nombre entier.
+        } @else if (form.controls.minutes.invalid) {
+          Les minutes vont de 0 à {{ maxMinutes }}.
+        } @else {
+          L'objectif ne peut pas dépasser {{ maxLabel }}.
+        }
+      </mat-error>
+    </mat-form-field>
+
+    <button matButton="filled" type="submit" [disabled]="form.invalid || busy()">
+      Enregistrer l'objectif
+    </button>
+  </div>
+
+  <p class="preview" aria-live="polite">
+    @if (preview(); as total) {
+      <span class="sr-only">Objectif saisi :</span> = {{ total }}
+    }
+  </p>
+</form>

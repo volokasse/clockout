@@ -1,0 +1,35 @@
+:host {
+  display: block;
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.fields mat-form-field {
+  flex: 0 1 9rem;
+}
+
+.fields button {
+  margin-top: 8px;
+}
+
+.preview {
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
