@@ -9,6 +9,8 @@ import { TimeTrackingService } from "./time-tracking.service.js";
 import { Clock, SystemClock } from "./clock.js";
 import { HistoryService } from "./history.service.js";
 import { HistoryController } from "./history.controller.js";
+import { WeeklyReportService } from "./weekly-report.service.js";
+import { WeeklyReportController } from "./weekly-report.controller.js";
 
 @Module({
     imports: [TypeOrmModule.forFeature([
@@ -20,9 +22,10 @@ import { HistoryController } from "./history.controller.js";
     providers: [
         TimeTrackingService,
         HistoryService,
+        WeeklyReportService,
         { provide: Clock, useClass: SystemClock }
     ],
-    controllers: [TimeTrackingController, HistoryController]
+    controllers: [TimeTrackingController, HistoryController, WeeklyReportController]
 })
 export class TimeTrackingModule {
 
