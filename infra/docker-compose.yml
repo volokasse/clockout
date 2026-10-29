@@ -17,5 +17,24 @@ services:
       timeout: 5s
       retries: 10
 
+  # Tests DB
+  # `docker compose up` does not make it up since it's on another profile.
+  db-test:
+    image: postgres:18
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_TEST_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_TEST_DB}
+    tmpfs:
+      - /var/lib/postgresql
+    ports:
+      - "127.0.0.1:${POSTGRES_TEST_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
 volumes:
   db_data:
