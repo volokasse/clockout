@@ -60,13 +60,6 @@ Cette page va servir à afficher des statistiques pertinentes pour l'utilisateur
 - Dans infra : ```docker compose down``` pour la DB
   - Ne pas utiliser l'argument -v dans la commande sous risque de perte des données.
 
-### Tests et vérifications
-
-- npm run build dans front puis back.
-- npm run test dans front puis back.
-- Bouton vérifier l'API : succès, panne, reprise.
-- Persistance des données du PostgreSQL vérifiée après down/up.
-
 ### Back
 
 #### Database migrations
@@ -76,6 +69,62 @@ Cette page va servir à afficher des statistiques pertinentes pour l'utilisateur
 - ```npm run migration:show``` to list all migrations and their status
 - ```npm run migration:run``` to run waiting migrations
 - ```npm run migration:revert``` to revert last migration
+
+### Tests et vérifications
+
+- npm run build dans front puis back.
+- npm run test dans front puis back.
+- Bouton vérifier l'API : succès, panne, reprise.
+- Persistance des données du PostgreSQL vérifiée après down/up.
+
+### Tests d'intégration
+
+Les tests d'intégration (`back/test/*.e2e-spec.ts`) démarrent la vraie application NestJS, appellent l'API avec Supertest et relisent PostgreSQL. Ils utilisent une base **réservée aux tests**, dans un second conteneur : la base de développement n'est jamais touchée.
+
+| | Développement | Tests |
+| ------- | ---------- | ---------- |
+| Conteneur | `db` | `db-test` (profil compose `test`) |
+| Port | `POSTGRES_PORT` | `POSTGRES_TEST_PORT` (15433) |
+| Base / utilisateur | `clockout` / `root` | `clockout_test` / `clockout_test` |
+| Données | volume persistant | `tmpfs` : effacées à l'arrêt du conteneur |
+| Configuration du back | `back/.env` | `back/.env.test` |
+
+#### Préparation (une seule fois)
+
+1. Ajouter à `infra/.env` les variables `POSTGRES_TEST_*` de `infra/.env.example` (tant qu'elles manquent, chaque commande `docker compose` affiche des avertissements).
+2. Copier ```back/.env.test.example``` vers ```back/.env.test``` (PowerShell : `Copy-Item back/.env.test.example back/.env.test`).
+3. Les ports et identifiants de `back/.env.test` doivent correspondre à ceux de `infra/.env`.
+
+#### Lancer les tests
+
+1. Dans infra : ```docker compose up -d --wait db-test``` (attend que la base soit prête ; sans effet sur `db`)
+2. Dans back : ```npm run test:e2e```
+3. Pour arrêter la base de test, dans infra : ```docker compose rm -sf db-test```
+   - Ne pas utiliser `docker compose down` pour cela : il arrête aussi la base de développement.
+
+`npm test` reste la commande des tests unitaires : elle n'a besoin d'aucune base et ne lance pas les tests d'intégration.
+
+#### Si le lancement échoue
+
+Le message commence par `Impossible de préparer la base de test :` et aucun test n'a été exécuté.
+
+- `connect ECONNREFUSED 127.0.0.1:15433` : la base de test n'est pas démarrée (voir « Lancer les tests », point 1).
+- `back/.env.test introuvable` ou `.env.test incomplet` : recopier le modèle `back/.env.test.example` (voir Préparation).
+- `Opération refusée, ce n'est pas une base de test` : `.env.test` désigne autre chose qu'une base de test. Rien n'a été exécuté ; corriger `.env.test` d'après le modèle.
+- Les `console.log` des tests réussis sont masqués (`silent: 'passed-only'` dans `vitest.config.e2e.ts`) ; ils s'affichent si le test échoue.
+
+#### Comment la base de développement est protégée
+
+- `.env.test` doit contenir toutes les clés `DB_*` et `PROJECT_MODE`, et il écrase les variables du shell : une clé oubliée ne peut pas être complétée par `back/.env`.
+- Avant toute migration ou remise à zéro, `PROJECT_MODE` doit valoir `test`, `DB_HOST` être local et `DB_NAME` se terminer par `_test`. Puis, une fois connecté, `current_database()` doit aussi se terminer par `_test`. Sinon l'opération est refusée et rien n'est exécuté.
+- Avant chaque test, `period` et `sub_period` sont vidées (`TRUNCATE ... RESTART IDENTITY`) et l'objectif hebdomadaire est remis à 2100 minutes. Les types de période (semés par les migrations) ne sont pas touchés.
+- Les migrations sont appliquées automatiquement au démarrage de `npm run test:e2e`.
+
+#### Règles pour écrire un test d'intégration
+
+- Un fichier = une application (`createTestApp()` dans `beforeAll`, `app.close()` dans `afterAll`) ; les fichiers s'exécutent l'un après l'autre car ils partagent la même base.
+- Chaque test commence par `resetDatabase()` : il ne doit dépendre d'aucun autre test. Vérification : `npm run test:e2e -- --sequence.shuffle`.
+- L'heure vient d'une `FakeClock` avancée à la main, jamais de l'horloge réelle.
 
 ## SPECIFIC RULES
 
