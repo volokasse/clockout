@@ -9,7 +9,7 @@ import { Clock } from './clock.js';
 import { SubPeriod } from './entities/sub-period.entity.js';
 import { PERIOD_TYPE } from './period-types.js';
 import { assertTransition, InvalidTransitionError } from './session-transitions.js';
-import { computeWorkedMs, computeElapsedMs } from './worked-time.js';
+import { computeWorkedMs, computeElapsedMs, computeSessionWorkedMs } from './worked-time.js';
 import { isUniqueViolation } from './is-unique-violation.js';
 
 const toSpan = (row: { id: number; start: Date; end: Date | null }): Span => ({
@@ -46,7 +46,7 @@ function toResponse(state: SessionState, now: Date): SessionResponse {
         session: toSpanResponse(state.session),
         sub: state.status === 'subed' ? toSubSpanResponse(state.sub) : null,
         subs: allSubs.map(toSubSpanResponse),
-        workedMs: computeWorkedMs(state.session, allSubs, now),
+        workedMs: computeSessionWorkedMs(state.session, allSubs, now),
         elapsedMs: computeElapsedMs(state.session, now)
     }
 }
@@ -163,7 +163,7 @@ export class TimeTrackingService {
                 session: toSpanResponse({ ...state.session, end: now }),
                 sub: null,
                 subs: [],
-                workedMs: computeWorkedMs(state.session, subs, now),
+                workedMs: computeSessionWorkedMs(state.session, subs, now),
                 elapsedMs: computeElapsedMs(state.session, now)
             };
         });

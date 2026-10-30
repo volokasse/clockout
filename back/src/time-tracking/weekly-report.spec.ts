@@ -95,7 +95,7 @@ describe('buildWeeklyTotals', () => {
 
 describe('buildWeeklyTotals : jeu de données calculable à la main', () => {
     it.each([
-        ['semaine A', WEEK_A, [240, 0, 450, 450, 0, 0, 240], [2, 0, 1, 2, 0, 0, 1], 1380],
+        ['semaine A', WEEK_A, [240, 0, 450, 435, 0, 0, 240], [2, 0, 1, 2, 0, 0, 1], 1365],
         ['semaine B', WEEK_B, [60, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], 60]
     ])('%s', (_label, week, minutes, counts, total) => {
         // The whole data set is given each time: sessions of the other week are ignored
@@ -106,6 +106,33 @@ describe('buildWeeklyTotals : jeu de données calculable à la main', () => {
         expect(totals.totalMinutes).toBe(total);
     });
 
+    it('déduit les pauses par défaut (jeudi : 255 + 180 = 435)', () => {
+        const totals = buildWeeklyTotals(WEEK_A, [S4, S5], NOW);
+
+        expect(totals.days[3].workedMinutes).toBe(435);
+    });
+
+    it('ne déduit rien quand le paramètre deducted est vide (jeudi 450, total 1380)', () => {
+        const totals = buildWeeklyTotals(WEEK_A, DATA_SET, NOW, []);
+
+        expect(totals.days[3].workedMinutes).toBe(450);
+        expect(totals.totalMinutes).toBe(1380);
+    });
+
+    it('session 09:00-17:30 avec une pause 12:30-13:30 : 7h30, puis 7h45 si la pause est corrigée à 12:30-13:15', () => {
+        const withBreak = (end: string): WeeklySession => ({
+            ...session(8, '06', '09:00', '17:30'),
+            subs: [{ periodTypeId: PERIOD_TYPE.BREAK, start: paris('06', '12:30'), end: paris('06', end) }]
+        });
+
+        const before = buildWeeklyTotals(WEEK_A, [withBreak('13:30')], NOW);
+        const after = buildWeeklyTotals(WEEK_A, [withBreak('13:15')], NOW);
+
+        expect(before.days[1].workedMinutes).toBe(450);
+        expect(after.days[1].workedMinutes).toBe(465);
+        expect(after.totalMinutes - before.totalMinutes).toBe(15);
+    });
+
     it('compte la session qui franchit minuit le dimanche, jour de son début, et pas dans la semaine suivante', () => {
         const a = buildWeeklyTotals(WEEK_A, [S6], NOW);
         const b = buildWeeklyTotals(WEEK_B, [S6], NOW);
@@ -113,19 +140,6 @@ describe('buildWeeklyTotals : jeu de données calculable à la main', () => {
         expect(a.days[6]).toEqual({ date: '2026-01-11', workedMinutes: 240, sessionCount: 1 });
         expect(b.totalMinutes).toBe(0);
         expect(b.days[0].sessionCount).toBe(0);
-    });
-
-    it('ne déduit pas les pauses par défaut (jeudi : 270 + 180 = 450)', () => {
-        const totals = buildWeeklyTotals(WEEK_A, [S4, S5], NOW);
-
-        expect(totals.days[3].workedMinutes).toBe(450);
-    });
-
-    it('déduit les pauses quand on le demande via le paramètre deducted (jeudi 435, total 1365)', () => {
-        const totals = buildWeeklyTotals(WEEK_A, DATA_SET, NOW, [PERIOD_TYPE.BREAK]);
-
-        expect(totals.days[3].workedMinutes).toBe(435);
-        expect(totals.totalMinutes).toBe(1365);
     });
 
     it('ne déduit que les types demandés (une veille n\'est pas une pause)', () => {

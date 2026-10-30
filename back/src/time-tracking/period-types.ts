@@ -7,4 +7,4 @@ export const PERIOD_TYPE = {
 export const SUB_PERIOD_TYPES = [PERIOD_TYPE.BREAK, PERIOD_TYPE.SCOUTING] as const;
 export type SubPeriodTypeId = (typeof SUB_PERIOD_TYPES)[number];
 
-export const SUBTRACTED_TYPES: readonly number[] = [];
+export const SUBTRACTED_TYPES: readonly number[] = [PERIOD_TYPE.BREAK];

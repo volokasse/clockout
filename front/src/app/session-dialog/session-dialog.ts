@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, signal } from "@angular/core";
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from "@angular/material/dialog";
-import { SessionForm } from "../session-form.ts/session-form";
+import { SessionForm } from "../session-form/session-form";
 import { SessionDetail, SessionPayload, Violation } from "../time-tracking/history.model";
 import { HistoryApi } from "../time-tracking/history.api";
 import { finalize } from "rxjs";

@@ -166,4 +166,31 @@ describe('SessionForm', () => {
       expect(root().querySelector('[role="alert"]')?.textContent).toContain('chevauche une autre session');
     });
   });
+
+  describe('accessibilité des pauses', () => {
+    const labelsOf = (input: HTMLInputElement) =>
+      (input.getAttribute('aria-labelledby') ?? '')
+        .split(' ')
+        .filter(Boolean)
+        .map((id) => root().querySelector(`[id="${id}"]`));
+
+    it('give each sub start and end a unique, existing and named label', async () => {
+      await open(SESSION);
+      const subInputs = inputs().slice(2);
+      const expectedNames = ['Début', 'Fin', 'Début', 'Fin'];
+
+      expect(subInputs).toHaveLength(4);
+      subInputs.forEach((input, index) => {
+        const targets = labelsOf(input);
+        expect(targets).toHaveLength(1);
+        expect(targets[0]).not.toBeNull();
+        expect(targets[0]?.textContent?.trim()).toBe(expectedNames[index]);
+      });
+
+      const labelIds = subInputs.map((input) => input.getAttribute('aria-labelledby'));
+      expect(new Set(labelIds).size).toBe(4);
+      const allIds = Array.from(root().querySelectorAll('[id]')).map((element) => element.id);
+      expect(new Set(allIds).size).toBe(allIds.length);
+    });
+  });
 });

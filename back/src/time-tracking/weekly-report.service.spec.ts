@@ -1,7 +1,7 @@
 import type { Repository } from 'typeorm';
 import type { PreferencesService } from '../preferences/preferences.service.js';
 import { Period } from './entities/period.entity.js';
-import { PERIOD_TYPE, SUBTRACTED_TYPES } from './period-types.js';
+import { PERIOD_TYPE } from './period-types.js';
 import { WeeklyReportService } from './weekly-report.service.js';
 
 const FROM_CLAUSE = 'period.start >= (CAST(:from AS timestamp) AT TIME ZONE :tz)';
@@ -205,7 +205,8 @@ describe('WeeklyReportService.weekly : sessions', () => {
         ]);
     });
 
-    it('ne déduit pas les pauses (SUBTRACTED_TYPES est vide aujourd\'hui)', async () => {
+    it('déduit les pauses : il faut que le service transmette le type de chaque pause', async () => {
+        // If the mapping of the sub periods lost their type, nothing would be deducted
         const { service } = createService([
             row(5, '2026-01-08T12:00:00Z', '2026-01-08T16:30:00Z', [
                 { id: 1, start: new Date('2026-01-08T14:00:00Z'), end: new Date('2026-01-08T14:15:00Z'), periodType: { id: PERIOD_TYPE.BREAK } }
@@ -214,29 +215,22 @@ describe('WeeklyReportService.weekly : sessions', () => {
 
         const report = await service.weekly('2026-01-07');
 
-        expect(report.days[3].workedMinutes).toBe(270);
+        expect(report.days[3].workedMinutes).toBe(255); // 270 - 15
     });
 
-    it('transmet les pauses et leur type : elles sont déduites dès que SUBTRACTED_TYPES le demande', async () => {
-        // SUBTRACTED_TYPES is empty today, so without this test nothing would notice a
-        // broken mapping of the sub periods. It is emptied again in the finally block.
-        const deducted = SUBTRACTED_TYPES as number[];
-        deducted.push(PERIOD_TYPE.BREAK);
-        try {
-            const { service } = createService([
-                row(5, '2026-01-08T12:00:00Z', '2026-01-08T16:30:00Z', [
-                    { id: 1, start: new Date('2026-01-08T14:00:00Z'), end: new Date('2026-01-08T14:15:00Z'), periodType: { id: PERIOD_TYPE.BREAK } },
-                    { id: 2, start: new Date('2026-01-08T15:00:00Z'), end: new Date('2026-01-08T15:10:00Z'), periodType: { id: PERIOD_TYPE.SCOUTING } }
-                ])
-            ]);
+    it('ne déduit pas les veilles : elles comptent comme du travail', async () => {
+        const { service } = createService([
+            row(5, '2026-01-08T12:00:00Z', '2026-01-08T16:30:00Z', [
+                { id: 1, start: new Date('2026-01-08T14:00:00Z'), end: new Date('2026-01-08T14:15:00Z'), periodType: { id: PERIOD_TYPE.BREAK } },
+                { id: 2, start: new Date('2026-01-08T15:00:00Z'), end: new Date('2026-01-08T15:10:00Z'), periodType: { id: PERIOD_TYPE.SCOUTING } }
+            ])
+        ]);
 
-            const report = await service.weekly('2026-01-07');
+        const report = await service.weekly('2026-01-07');
 
-            expect(report.days[3].workedMinutes).toBe(255); // 270 - 15 (the scouting is not deducted)
-        } finally {
-            deducted.length = 0;
-        }
+        expect(report.days[3].workedMinutes).toBe(255); // 270 - 15 (the scouting is not deducted)
     });
+
 
     it('transmet l\'erreur de la base', async () => {
         const { service, builder } = createService();

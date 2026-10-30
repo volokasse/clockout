@@ -127,3 +127,37 @@ describe('HistoryService.update', () => {
         await expect(service.update(1, input())).rejects.toThrow('disk full');
     });
 });
+
+it('déduit la pause du temps travaillé : 09:00-17:30 avec une pause 12:30-13:30 = 7h30', async () => {
+    const { service } = createService();
+
+    const result = await service.create(input({
+        subs: [{ periodTypeId: PERIOD_TYPE.BREAK, start: at('12:30'), end: at('13:30') }]
+    }));
+
+    expect(result.elapsedMs).toBe(510 * 60_000);
+    expect(result.workedMs).toBe(450 * 60_000);
+});
+
+it('ne déduit pas une veille du temps travaillé', async () => {
+    const { service } = createService();
+
+    const result = await service.create(input({
+        subs: [{ periodTypeId: PERIOD_TYPE.SCOUTING, start: at('12:30'), end: at('13:30') }]
+    }));
+
+    expect(result.workedMs).toBe(510 * 60_000);
+});
+
+it('recalcule le temps travaillé quand la pause est corrigée : 7h45 au lieu de 7h30', async () => {
+    const { service } = createService();
+    const withBreak = (end: string) => input({
+        subs: [{ periodTypeId: PERIOD_TYPE.BREAK, start: at('12:30'), end: at(end) }]
+    });
+
+    const before = await service.update(1, withBreak('13:30'));
+    const after = await service.update(1, withBreak('13:15'));
+
+    expect(before.workedMs).toBe(450 * 60_000);
+    expect(after.workedMs).toBe(465 * 60_000);
+});
