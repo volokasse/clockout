@@ -20,6 +20,10 @@ const FRONT_URL = `http://127.0.0.1:${FRONT_PORT}`;
 
 export default defineConfig({
     testDir: './tests',
+    fullyParallel: false,
+    workers: 1,
+    forbidOnly: !!process.env.CI,
+    retries: 0,
 
     use: {
         baseURL: FRONT_URL,

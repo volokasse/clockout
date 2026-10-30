@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 
 test("l'application s'ouvre sur l'écran Aujourd'hui", async ({ page }) => {
     await page.goto('/');
