@@ -126,6 +126,31 @@ Le message commence par `Impossible de préparer la base de test :` et aucun tes
 - Chaque test commence par `resetDatabase()` : il ne doit dépendre d'aucun autre test. Vérification : `npm run test:e2e -- --sequence.shuffle`.
 - L'heure vient d'une `FakeClock` avancée à la main, jamais de l'horloge réelle.
 
+### Tests de bout en bout (Playwright)
+
+Les tests de bout en bout (`e2e/tests/*.spec.ts`) pilotent un vrai Chromium sur le vrai front (`ng serve`, port 4300) et la vraie API (port 3100), branchés sur la **base de test** du jour 7. Aucune réponse n'est simulée.
+
+#### Préparation
+
+1. Avoir préparé les tests d'intégration (voir plus haut : `back/.env.test`, conteneur `db-test`) et lancé `npm ci` dans `front` et `back`.
+2. Dans e2e : ```npm install``` puis ```npx playwright install chromium```
+
+#### Lancer les tests end-to-end
+
+1. Dans infra : ```docker compose up -d --wait db-test```
+2. Dans e2e : ```npm test``` (ou ```npm run test:headed``` pour voir le navigateur)
+3. Rapport HTML : ```npm run report``` ; trace d'un test en échec : ```npx playwright show-trace test-results/<dossier>/trace.zip```
+
+Les ports **3100** et **4300** doivent être libres : aucun serveur existant n'est réutilisé. Ne pas lancer `nest start --watch` en même temps (le back de test est reconstruit dans `back/dist`).
+
+#### Règles pour écrire un test de bout en bout
+
+- Importer `test` et `expect` depuis `../fixtures.js` : la base de test est remise à zéro avant chaque test, et un seul worker est utilisé.
+- Chercher les éléments par rôle et libellé (`getByRole`, `getByLabel`), `exact: true` quand un nom est contenu dans un autre.
+- Attendre uniquement avec des assertions `await expect(...)`. Jamais de `waitForTimeout`, jamais de lecture immédiate (`isVisible()`, `textContent()`) suivie d'un `expect(valeur)`.
+- Ne pas dépendre de la date du jour : utiliser `support/dates.ts`.
+- Vérifier la stabilité : ```npx playwright test --repeat-each=3 --retries=0```
+
 ## SPECIFIC RULES
 
 ### Weekly report rules

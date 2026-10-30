@@ -24,12 +24,15 @@ export default defineConfig({
     workers: 1,
     forbidOnly: !!process.env.CI,
     retries: 0,
+    reporter: [['list'], ['html', { open: 'never' }]],
 
     use: {
         baseURL: FRONT_URL,
         // Le bilan raisonne en heure de Paris : le navigateur aussi.
         locale: 'fr-FR',
         timezoneId: 'Europe/Paris',
+        trace: 'retain-on-failure',
+        screenshot: 'only-on-failure'
     },
 
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
