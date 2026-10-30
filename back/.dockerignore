@@ -1,0 +1,31 @@
+# Ce qui n'entre pas dans le contexte de build n'entre pas dans l'image.
+# On garde seulement : package*.json, nest-cli.json, tsconfig*.json et src/.
+
+# Secrets et configuration locale (DB_HOST=127.0.0.1 casserait l'API en conteneur)
+.env
+.env.*
+
+# Réinstallé et recompilé dans l'image (et binaires de l'OS hôte)
+node_modules
+dist
+*.tsbuildinfo
+
+# Tests, outils de développement, éditeur, git
+test
+coverage
+vitest.config*.ts
+check-*.mjs
+.oxlintrc.json
+.prettierrc
+.vscode
+.idea
+.git
+.gitignore
+.gitattributes
+src/**/*.spec.ts
+
+# Documentation et fichiers Docker eux-mêmes
+README.md
+Dockerfile
+.dockerignore
+*.log
