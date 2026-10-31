@@ -1,0 +1,27 @@
+# Ce qui n'entre pas dans le contexte de build n'entre pas dans l'image.
+# Le Dockerfile ne copie que : package*.json, angular.json, tsconfig*.json,
+# public/, src/ et nginx.conf. Le reste est écarté ici pour alléger l'envoi
+# vers Docker et par sécurité.
+
+# Réinstallé et recompilé dans l'image (et binaires de l'OS hôte)
+node_modules
+dist
+.angular
+out-tsc
+
+# Secrets et configuration locale
+.env
+.env.*
+
+# Éditeur, git, documentation, fichiers Docker eux-mêmes
+.vscode
+.idea
+.git
+.gitignore
+.editorconfig
+.prettierrc
+README.md
+Dockerfile
+.dockerignore
+*.log
+.DS_Store
