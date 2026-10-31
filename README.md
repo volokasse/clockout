@@ -151,6 +151,42 @@ Les ports **3100** et **4300** doivent être libres : aucun serveur existant n'e
 - Ne pas dépendre de la date du jour : utiliser `support/dates.ts`.
 - Vérifier la stabilité : ```npx playwright test --repeat-each=3 --retries=0```
 
+### Lancer toute l'application dans Docker
+
+La base, l'API et le front tournent chacun dans un conteneur (`infra/compose.prod.yml`, projet Compose `clockout`). Le mode développement décrit plus haut ne change pas : les deux modes peuvent même coexister.
+
+| | Développement | Docker |
+| ------- | ---------- | ---------- |
+| Front | `npm start`, port 4200 | Nginx : [http://localhost:8080](http://localhost:8080) (`WEB_PORT`) |
+| API | `npm run start:dev`, port 3000 | conteneur `api`, non publiée : joignable par [http://localhost:8080/api](http://localhost:8080/api) |
+| PostgreSQL | conteneur `db` de `docker-compose.yml`, port 15432 | conteneur `db` du projet `clockout`, non publié, volume `clockout_db_data` |
+
+#### Première mise en route (dans infra)
+
+1. Vérifier `infra/.env` : `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` et, si 8080 est pris, `WEB_PORT` (modèle : `infra/.env.example`).
+2. ```docker compose -f compose.prod.yml build```
+3. ```docker compose -f compose.prod.yml run --rm api npm run migration:run:prod``` (crée les tables dans la base vide)
+4. ```docker compose -f compose.prod.yml up -d```
+5. Ouvrir [http://localhost:8080](http://localhost:8080)
+
+Toujours **migrer avant d'ouvrir le site** : sans tables, `/api/health` reste « ok » mais toutes les autres routes répondent 500 (`relation "period" does not exist` dans les logs de l'API). À refaire après chaque nouvelle migration et après `down -v`.
+
+#### Commandes utiles (dans infra)
+
+- ```docker compose -f compose.prod.yml ps``` : état et santé des services
+- ```docker compose -f compose.prod.yml logs -f api``` (ou `web`, `db`) : journaux en direct ; `--tail 50` pour les dernières lignes
+- ```docker compose -f compose.prod.yml down``` : supprime les conteneurs, **conserve** le volume (les données restent)
+- ```docker compose -f compose.prod.yml down -v``` : supprime aussi le volume, **efface toutes les données**
+- Après une modification du code : `build`, puis la migration si une migration a été ajoutée, puis `up -d`
+
+#### Si ça ne marche pas
+
+- `ports are not available: ... Only one usage of each socket address ...` (programme Windows) ou `Bind for 127.0.0.1:8080 failed: port is already allocated` (autre conteneur) : 8080 est pris. Choisir un autre `WEB_PORT` dans `infra/.env`.
+- `password authentication failed` dans les logs de l'API après un changement de `POSTGRES_PASSWORD` : la base garde le mot de passe de sa première initialisation (voir `ALTER USER`, ou `down -v` pour repartir de zéro).
+- Le site s'affiche mais les écrans restent vides ou en erreur : migration oubliée (voir ci-dessus).
+- `variable is not set` / `POSTGRES_PASSWORD manquant` : `infra/.env` incomplet.
+- `502 Bad Gateway` sur `/api/...` : l'API est arrêtée ou vient d'être recréée (patienter 10 s) ; `ps` puis `logs api`.
+
 ## SPECIFIC RULES
 
 ### Weekly report rules
