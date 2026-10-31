@@ -1,0 +1,73 @@
+# Pile complète ClockOut : base de données + API + frontend, chacun dans son conteneur.
+# Le fichier docker-compose.yml voisin reste celui du développement (db seule).
+#
+# Ordre de lancement (depuis le dossier infra/) :
+#   1. docker compose -f compose.prod.yml build
+#   2. docker compose -f compose.prod.yml run --rm api npm run migration:run:prod
+#   3. docker compose -f compose.prod.yml up -d
+# Les variables POSTGRES_* sont lues dans infra/.env ; le site est sur http://localhost:8080.
+name: clockout
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER manquant dans infra/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans infra/.env}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB manquant dans infra/.env}
+    # Volume nommé : il survit à "down" et disparaît seulement avec "down -v".
+    # PostgreSQL 18 range ses données dans un sous-dossier de /var/lib/postgresql.
+    volumes:
+      - db_data:/var/lib/postgresql
+    # Aucun "ports" : la base n'est joignable que depuis le réseau Compose.
+    # "-h 127.0.0.1" teste la connexion réseau (TCP), comme le fera l'API : sans lui,
+    # pg_isready peut répondre "prête" pendant l'initialisation de la base, avant
+    # que le vrai serveur n'accepte les connexions réseau.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../back
+    restart: unless-stopped
+    # L'API ne démarre que quand la base accepte les connexions.
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      API_PORT: "3000"
+      # "db" = nom du service, résolu par le DNS interne de Docker.
+      # "localhost" désignerait le conteneur api lui-même, où il n'y a pas de base.
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+    # Aucun "ports" : seul Nginx (web) parle à l'API.
+    # Attention : "healthy" prouve que l'API répond, pas que les tables existent.
+    # Tant que la migration n'a pas été lancée, /api/health est vert mais les
+    # autres routes renvoient une erreur 500.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: ../front
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    # Seul port publié, et seulement sur cette machine (127.0.0.1) : le site et
+    # l'API (/api/...) passent tous deux par ce point d'entrée.
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:80"
+
+volumes:
+  db_data:
