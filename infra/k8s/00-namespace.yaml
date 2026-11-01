@@ -1,0 +1,6 @@
+# Un namespace = un "dossier" du cluster. Tout ClockOut y vit : le supprimer
+# (kubectl delete namespace clockout) supprime tout ce qu'il contient.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: clockout

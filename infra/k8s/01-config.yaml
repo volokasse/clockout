@@ -1,0 +1,62 @@
+# Configuration NON secrète de ClockOut.
+# Le mot de passe de PostgreSQL n'est PAS ici : il est dans le Secret "clockout-db",
+# créé en ligne de commande depuis infra/.env (voir le guide, étape 10.3).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clockout-config
+  namespace: clockout
+data:
+  # Lues par PostgreSQL au premier démarrage de son volume.
+  POSTGRES_USER: root
+  POSTGRES_DB: clockout
+  # Lues par l'API et par la migration.
+  # "db" = nom du Service PostgreSQL (10-db.yaml) : le DNS du cluster le résout,
+  # exactement comme le nom de service Compose du jour 9.
+  DB_HOST: db
+  DB_PORT: "5432"
+  API_PORT: "3000"
+---
+# Configuration de Nginx pour Kubernetes : même rôle que front/nginx.conf (jour 9),
+# SANS la ligne "resolver 127.0.0.11". Cette adresse est le DNS de Docker ; elle
+# n'existe pas dans Kubernetes. Ici le Service "api" a une adresse stable, qui ne
+# change pas quand le Pod de l'API est remplacé : le détour du jour 9 est inutile.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clockout-nginx
+  namespace: clockout
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        gzip on;
+        gzip_types text/css application/javascript application/json;
+
+        # /api/... part vers le Service "api" du namespace (http://api:3000).
+        location ^~ /api/ {
+            proxy_pass http://api:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location ~* \.(?:js|css)$ {
+            add_header Cache-Control "public, max-age=31536000, immutable";
+        }
+
+        location = /index.html {
+            add_header Cache-Control "no-cache";
+        }
+
+        # Routes Angular (/today, /history...) : repli vers index.html.
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+    }

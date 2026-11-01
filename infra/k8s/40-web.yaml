@@ -1,0 +1,50 @@
+# Front : Nginx + Angular compilé, un Deployment à une instance et son Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: clockout
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: clockout-web:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          # Le fichier de configuration vient du ConfigMap "clockout-nginx" et
+          # remplace TOUT le dossier /etc/nginx/conf.d de l'image (qui ne contenait que
+          # le default.conf du jour 9).
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 5
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: clockout-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: clockout
+spec:
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 80

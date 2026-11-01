@@ -1,0 +1,89 @@
+# PostgreSQL : un disque persistant (PVC), un Deployment à une instance, un Service interne.
+
+# 1. Le disque. "ReadWriteOnce" : monté en lecture-écriture par un seul nœud à la fois.
+#    Minikube fournit une StorageClass "standard" qui crée le volume automatiquement.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-data
+  namespace: clockout
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+# 2. L'instance. replicas: 1 -> Kubernetes maintient UN Pod PostgreSQL en vie.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: clockout
+spec:
+  replicas: 1
+  # "Recreate" : lors d'une mise à jour, l'ancien Pod est arrêté AVANT de démarrer le
+  # nouveau. Deux PostgreSQL ne doivent jamais écrire sur le même disque.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: clockout-config
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: clockout-config
+                  key: POSTGRES_DB
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clockout-db
+                  key: POSTGRES_PASSWORD
+          # Même point de montage que Compose (jour 9) : PostgreSQL 18 range ses
+          # données dans un sous-dossier de /var/lib/postgresql.
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+          # Le Pod ne reçoit du trafic que quand la base accepte les connexions
+          # réseau (-h 127.0.0.1), pas pendant son initialisation.
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            periodSeconds: 5
+            failureThreshold: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: db-data
+---
+# 3. L'adresse stable. Les autres Pods joignent la base par "db:5432".
+#    Sans "type", un Service est de type ClusterIP : interne au cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: clockout
+spec:
+  selector:
+    app: db
+  ports:
+    - port: 5432
+      targetPort: 5432

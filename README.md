@@ -187,6 +187,70 @@ Toujours **migrer avant d'ouvrir le site** : sans tables, `/api/health` reste «
 - `variable is not set` / `POSTGRES_PASSWORD manquant` : `infra/.env` incomplet.
 - `502 Bad Gateway` sur `/api/...` : l'API est arrêtée ou vient d'être recréée (patienter 10 s) ; `ps` puis `logs api`.
 
+### Lancer toute l'application dans Kubernetes (Minikube)
+
+Même application, orchestrée par Kubernetes sur un cluster local à un seul nœud (Minikube). Les manifests sont dans `infra/k8s/` et tout vit dans le namespace `clockout`. Le mode développement et la pile Docker du paragraphe précédent ne changent pas : les trois modes peuvent coexister (le site Kubernetes utilise le port 8081).
+
+| | Docker (`compose.prod.yml`) | Kubernetes (`infra/k8s/`) |
+| ------- | ---------- | ---------- |
+| Site | [http://localhost:8080](http://localhost:8080) | [http://localhost:8081](http://localhost:8081) (`port-forward`) |
+| Base | volume `clockout_db_data` | disque `db-data` (PVC) |
+| Migration | `docker compose run --rm api npm run migration:run:prod` | Job `migrate` (`20-migrate-job.yaml`) |
+| Mot de passe PostgreSQL | `infra/.env` | Secret `clockout-db`, créé depuis `infra/.env` |
+
+#### Première mise en route
+
+Prérequis : Docker Desktop démarré, Minikube installé, `infra/.env` rempli. Tout se passe dans `infra/`, sauf les points 1 à 3 (racine du projet).
+
+1. ```minikube start --driver=docker --kubernetes-version=v1.34.1``` (la version de Kubernetes doit rester à une version près de `kubectl version --client`)
+2. ```docker build -t clockout-api:1.0 back``` puis ```docker build -t clockout-web:1.0 front```
+3. ```minikube image load clockout-api:1.0``` puis ```minikube image load clockout-web:1.0``` (le cluster ne voit pas les images de ton Docker local)
+4. ```kubectl apply -f k8s/00-namespace.yaml -f k8s/01-config.yaml```
+5. ```kubectl create secret generic clockout-db --from-env-file=.env -n clockout```
+6. ```kubectl apply -f k8s/10-db.yaml``` puis ```kubectl wait --for=condition=Available deployment/db -n clockout --timeout=180s```
+7. ```kubectl apply -f k8s/20-migrate-job.yaml``` puis ```kubectl wait --for=condition=Complete job/migrate -n clockout --timeout=120s```
+8. ```kubectl apply -f k8s/30-api.yaml -f k8s/40-web.yaml``` puis ```kubectl rollout status deployment/api -n clockout``` et ```kubectl rollout status deployment/web -n clockout```
+9. Dans un terminal dédié (il reste occupé) : ```kubectl port-forward service/web 8081:80 -n clockout```, puis ouvrir [http://localhost:8081](http://localhost:8081)
+
+Toujours **migrer avant de démarrer l'API** (points 7 puis 8). Le Job ne se relance pas tout seul : après l'ajout d'une migration, reconstruire l'image de l'API (`1.0` ou nouveau tag), la recharger (point 3), puis ```kubectl delete job migrate -n clockout``` et refaire le point 7.
+
+#### Commandes utiles pour naviguer (dans infra)
+
+- ```kubectl get pods -n clockout``` : état des Pods (`READY`, `STATUS`, `RESTARTS`)
+- ```kubectl logs deployment/api -n clockout``` (ou `deployment/web`, `deployment/db`, `job/migrate`) : journaux ; `-f` pour suivre en direct
+- ```kubectl describe pod -l app=api -n clockout``` : historique d'un Pod (section *Events* en bas)
+- ```kubectl get events -n clockout --sort-by=.lastTimestamp``` : événements récents du namespace
+- ```kubectl exec -it deploy/db -n clockout -- psql -U root -d clockout``` : ouvrir `psql` dans le Pod de la base (dans Git Bash, préfixer par `winpty` si l'erreur « the input device is not a TTY » apparaît)
+- ```kubectl rollout restart deployment/web -n clockout``` : relancer un composant (nécessaire après une modification du ConfigMap `clockout-nginx`)
+
+#### Arrêter, reprendre, effacer
+
+- Ctrl+C dans le terminal du `port-forward` : ferme seulement le tunnel
+- ```minikube stop``` : arrête le cluster, **conserve** les données ; ```minikube start``` le relance (sans option) et les Pods reviennent
+- ```kubectl delete namespace clockout``` : supprime l'application **et ses données** (équivalent de `down -v`) ; à refaire ensuite : points 4 à 9
+- ```minikube delete``` : supprime le cluster entier (et ses images chargées)
+
+#### Diagnostiques et dépannages
+
+- `ErrImagePull` / `ImagePullBackOff` : l'image n'est pas dans Minikube (point 3 oublié) ou le tag est faux. Vérifier avec `minikube image ls`.
+- `CreateContainerConfigError` et `secret "clockout-db" not found` (voir `describe pod`) : le Secret n'existe pas (point 5).
+- Le site s'affiche mais les écrans restent vides ou en erreur : migration oubliée (point 7). `kubectl logs deployment/api -n clockout` montrera `relation "period" does not exist`.
+- `error: lost connection to pod` dans le terminal du `port-forward` : le Pod `web` a été recréé ; relancer la commande du point 9.
+- `error: unable to listen on any of the requested ports: [{8081 80}]` : un `port-forward` tourne déjà (ou un autre programme utilise 8081). Fermer l'ancien terminal, ou choisir un autre port local (`9090:80`).
+- Après `minikube stop` puis `start`, `kubectl delete namespace clockout` ne vide plus la base (le disque reste `Released`, les anciennes données reviennent) : pour repartir de zéro, ```minikube delete``` puis refaire les points 1 à 9.
+- `kubectl` signale une différence de version avec le serveur : relancer Minikube avec `--kubernetes-version` aligné sur `kubectl version --client`.
+
+### Récapitulatif : lancer les tests
+
+| Niveau | Où | Commande | Ce dont il a besoin |
+| ------- | ---------- | ---------- | ---------- |
+| Unitaire (front) | `front` | ```npm run test``` | rien |
+| Unitaire (back) | `back` | ```npm test``` | rien |
+| Intégration (API + base de test) | `back` | ```npm run test:e2e``` | dans `infra` : ```docker compose up -d --wait db-test``` |
+| Navigateur (Playwright) | `e2e` | ```npm test``` | dans `infra` : ```docker compose up -d --wait db-test``` ; ports 3100 et 4300 libres |
+
+(Préparation faite une fois : `back/.env.test` et les variables `POSTGRES_TEST_*` de `infra/.env`, voir « Tests d'intégration ».) Ces tests ne dépendent ni de Docker Compose (pile complète) ni de Kubernetes : ils lancent leurs propres serveurs sur la base de **test**.
+
 ## SPECIFIC RULES
 
 ### Weekly report rules

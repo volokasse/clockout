@@ -1,0 +1,45 @@
+# Migrations : une tâche ponctuelle, à lancer AVANT l'API.
+# Même image que l'API, autre commande : c'est l'équivalent Kubernetes de
+#   docker compose run --rm api npm run migration:run:prod   (jour 9)
+# Pour la rejouer : kubectl delete job migrate -n clockout, puis kubectl apply -f ce fichier.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: clockout
+spec:
+  backoffLimit: 3          # 3 nouvelles tentatives si la commande échoue
+  template:
+    spec:
+      restartPolicy: Never # un Job ne redémarre pas "pour toujours" : il se termine
+      containers:
+        - name: migrate
+          image: clockout-api:1.0
+          imagePullPolicy: IfNotPresent
+          command: ["npm", "run", "migration:run:prod"]
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: clockout-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: clockout-config
+                  key: DB_PORT
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: clockout-config
+                  key: POSTGRES_USER
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: clockout-config
+                  key: POSTGRES_DB
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clockout-db
+                  key: POSTGRES_PASSWORD
