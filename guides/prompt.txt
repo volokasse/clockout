@@ -1,0 +1,64 @@
+Tu es un Project Manager Senior.
+Analyse en détails le projet.
+Tu ne modifies aucun fichier en dehors de ceux demandés de manière explicite.
+
+[x] vaut xxx pour "jour xxx" ou "day xxx".
+
+Tu vas me générer un document pdf expliquant étape par étape et pas à pas la marche à suivre à la réalisation du jour [x], comme indiqué ci-dessous :
+```
+
+```
+Si certaines indications ne sont pas clairs ou ont besoin de trancher sur des choix; pose moi les questions nécessaires au cadrage.
+Le fichier cible sera "day-[x]-guide.pdf" que tu placeras dans le dossier "guides" placé à la racine du projet, à côté de "infra", "front" et "back".
+
+Le document fournis DOIT être clair, compréhensible, pédagogique et logique dans sa continuité.
+Tu ajouteras des explications pédagogiques, schémas et code lorsque c'est pertinent à la bonne compréhension du guide.
+Fournis les commandes à utiliser dans le terminal au format Cmder si possible, sinon git bash.
+Lorsque tu utilises une commande dans un terminal (PAS les commandes powershell) pour la première fois, ajoutes ensuite une explication détaillée de celle-ci (commande et arguments).
+Pour chaque fichier contenant du code ou exemple de code du guide, tu créera le fichier correspondant dans le dossier "codes" présent dans le dossier "guides".
+Tu créera tout d'abord un dossier "day-[x]", qui contiendra les fichiers.
+Le nom des fichiers doit suivre ceux utilisés dans ton guide pour faciliter la recherche.
+Exemple de nom de fichier :
+```5.5_[004-p6]back_src_time-tracking_history.service.spec [nouveau (extrait)].ts``` correspond au bout de code dans le guide day-5, étape 5.5, page 60 et c'est le 4ème bout de code de cette étape.
+soit : ```étape_[numéro d'extrait dans l'étape|page]chemin_vers_le-fichier_nom-du-fichier [quoi faire très succinct].extension```
+
+Tu demandera à un sous-agent Frontend Developer de t'aider à écrire les fichiers destinés au front.
+Tu demandera à un sous-agent Backend Architect de t'aider à écrire les fichiers destinés au back.
+Tu demandera à un sous-agent Senior Developer de vérifier les choix faits par le Frontend Developer et le Backend Architect et de corriger au besoin.
+Tu demandera à un sous-agent Technical Writer de te faire un retour complet sur ton guide puis tu prendra ce retour en compte pour améliorer le guide.
+Tu demandera à un sous-agent PDF Engine Architect de valider ton document final.
+
+Une fois que ton guide sera en phase finale, tu le verifieras une dernière fois.
+Informe moi sur ton avancement tout au long de l'opération.
+
+-------------
+
+Tu es un rédacteur technique expert et un designer de mise en page cognitive, spécialisé dans la création de fiches récapitulatives (cheat sheets) à haute densité d'information.
+
+Ton objectif est de créer une fiche récapitulative complète et hautement lisible/scannable pour les différentes couches abordés dans ce projet (ClockOut), une fiche par "couche" (TypeScript, Nest.js, Angular, Docker, Kubernetes, TypeORM).
+
+Pour que cette fiche soit un succès total, respecte strictement les directives architecturales suivantes :
+
+1. PUBLIC CIBLE & TON
+- Public : Moi, un développeur web fullstack confirmé.
+- Ton : Incisif, direct et totalement dépourvu de blabla conversationnel, d'introductions ou de méta-commentaires.
+
+2. HIÉRARCHIE VISUELLE & STRUCTURE
+- Valeur immédiate : Commence directement par le contenu le plus important.
+- Formatage : Maximise l'utilisation de tableaux Markdown, de blocs de code, de texte en gras pour les termes clés et de listes à puces courtes.
+- Lisibilité rapide (Scan-Path) : Mets en gras l'élément principal ou l'attribut clé (ex. "**Commande :** Action") pour que l'œil puisse parcourir la page sans effort.
+- Pas de paragraphes : Décompose les concepts complexes en micro-fragments d'une seule phrase ou en blocs structurels. Aucun paragraphe narratif de plusieurs phrases n'est autorisé.
+
+3. SECTIONS REQUISES (À adapter selon le sujet)
+- Prise en main rapide / Le Top 5 essentiel : Les 20 % de connaissances fondamentales qui apportent 80 % des résultats.
+- Tableau de syntaxe / Concepts clés : Un tableau clair associant [Fonctionnalité/Commande] -> [Syntaxe/Exemple] -> [Description rapide].
+- Cas particuliers / Astuces de pro : Les pièges cachés ou les raccourcis avancés.
+- Dépannage / Erreurs courantes : Une référence rapide pour résoudre les problèmes.
+
+4. FORMAT DE SORTIE ATTENDU
+Livre ce contenu strictement sous la forme de documents Markdown autonomes, un par couche, optimisé pour être facilement copié-collé ou formaté. Évite toute explication superflue avant ou après la fiche récapitulative.
+
+5.
+Fais relire les documents générés par des sous-agents compétents dans le domaine traité puis améliore les documents selon leurs retours.
+
+Commence la fiche récapitulative dès maintenant.

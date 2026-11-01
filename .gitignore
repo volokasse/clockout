@@ -142,4 +142,5 @@ docker-compose.local.yaml
 # - migrations, schémas, scripts et fichiers .env.example sans secrets
 # Un .gitignore ne remplace pas les .dockerignore des contextes de build.
 
-/guides/**
+/guides/codes/**
+/guides/day-**
